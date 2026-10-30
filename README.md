@@ -19,3 +19,7 @@ python3 tests/check_positions.py
 ```
 
 Le test utilise `/usr/bin/chromium`. Il vérifie la sélection multiple, la persistance, les imports historiques, l’export/réimport, l’équilibrage des postes, les effectifs incomplets et l’affichage mobile. L’appel IA est simulé ; aucune clé réelle n’est nécessaire.
+
+## Suivi des versions
+
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application est indépendante de la version du format JSON d’import/export, qui reste à `1`.

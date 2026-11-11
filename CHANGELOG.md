@@ -2,7 +2,7 @@
 
 ## 1.5.1 — 11 novembre 2026
 
-- Synthèse sous les noms : niveau global en toutes lettres, taille en cm, genre et intitulé du poste principal (meneur, arrière, ailier, ailier fort ou pivot).
+- Synthèse sous les noms : niveau global en toutes lettres, taille en cm, genre et intitulé du poste principal. Les légendes restent dans l’effectif ; les équipes utilisent le format compact « Confirmé · 175 cm · Homme · Meneur ».
 
 - Joueurs classés par poste principal croissant (1 à 5) dans les équipes et dans la composition copiée ; postes non renseignés en dernier.
 - Ordre actualisé après chaque transfert, pour les générations locales et IA.

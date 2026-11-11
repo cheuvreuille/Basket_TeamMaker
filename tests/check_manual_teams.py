@@ -17,7 +17,7 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://127.0.0.1:{server.server_port}/')
         page.wait_for_url('**/basket-equipes-autonome.html')
-        assert page.locator('#appVersion').inner_text() == 'Version 1.4'
+        assert page.locator('#appVersion').inner_text() == 'Version 1.5'
         assert not page.locator('#manualHelp').is_visible()
         data = [dict(id=str(i), name=f'Joueur {i}', height=170 + i*10, level=i+1, positions=[i+1]) for i in range(4)]
         page.locator('#importFile').set_input_files(dict(name='players.json', mimeType='application/json', buffer=json.dumps(data).encode()))
@@ -87,4 +87,4 @@ try:
         browser.close()
 finally:
     server.shutdown()
-print('PASS: v1.4, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')
+print('PASS: v1.5, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')

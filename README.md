@@ -2,13 +2,30 @@
 
 Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossier avec `python3 -m http.server 8000`. `index.html` redirige vers l’application pour GitHub Pages.
 
-Les postes possibles se cochent dans la fiche du joueur : 1 (meneur), 2 (arrière), 3 (ailier), 4 (ailier fort), 5 (pivot). Plusieurs choix sont possibles ; ne rien cocher signifie « non renseigné ».
+## Postes des joueurs
 
-La génération locale favorise des postes complémentaires, en complément du niveau, de la taille et des compétences. Un joueur polyvalent ne couvre qu’un poste à la fois dans ce calcul. Le critère est renforcé avec la priorité « Complémentarité des rôles » et reste souple quand l’effectif ne permet pas de couvrir tous les postes. La demande à l’IA inclut également ces consignes.
+Chaque fiche comporte un poste principal unique : 1 (meneur), 2 (arrière), 3 (ailier), 4 (ailier fort), 5 (pivot). Les postes secondaires sont facultatifs, en sélection multiple, et ne peuvent pas répéter le poste principal. Un poste principal est demandé lors de l’ajout ou de l’enregistrement d’une fiche. Les joueurs historiques sans poste restent utilisables dans la génération sans modification obligatoire de l’effectif.
 
 ## Compatibilité JSON
 
-Le format d’export reste `{ "version": 1, "players": [...] }`. Chaque joueur peut maintenant contenir `"positions": [1, 3]`. Les champs existants restent inchangés. Les anciens exports (objet version 1 ou tableau de joueurs) et les données déjà enregistrées dans le navigateur restent utilisables : un champ `positions` absent devient `[]`. Les postes invalides sont ignorés et les doublons supprimés.
+Le format d’export reste `{ "version": 1, "players": [...] }`. Un joueur contient désormais `"primaryPosition": 3` et `"secondaryPositions": [2, 4]`. Le champ historique `"positions": [3, 2, 4]` est également exporté pour les anciennes applications, avec le principal en premier. Les autres champs sont conservés.
+
+Les anciens tableaux de joueurs, objets version 1 et données du navigateur sont migrés à la lecture : le premier poste valide de `positions` devient le principal, les suivants deviennent secondaires. Sans poste, le principal reste `null` et les secondaires `[]`. Les nouveaux champs explicites priment sur `positions`. Les postes invalides et les doublons sont ignorés ; le principal est retiré des secondaires. Il n’est pas nécessaire de réexporter les anciens JSON avant de les importer.
+
+## Versions du moteur
+
+Le sélecteur « Version du moteur » choisit l’algorithme de la prochaine génération locale, y compris « Nouvelle répartition ». Le résultat indique le moteur utilisé, même après un déplacement manuel. Changer le sélecteur ne recalcule pas une composition existante et ne concerne pas les appels IA.
+
+- **Moteur v1.0** : calcul historique et priorités historiques conservés, avec uniquement le poste principal utilisé pour l’équilibrage des postes. Les secondaires sont ignorés.
+- **Moteur v2.0** : ordre fixe de comparaison des compositions : (1) taille et six compétences, (2) niveau global et répartition des postes principaux, (3) couverture complémentaire permise par les secondaires et répartition de ces derniers. Le sélecteur historique de priorité est désactivé pour ce moteur.
+
+V2 compare ces trois scores dans l’ordre, sans somme pondérée entre priorités : un gain sur un critère de rang inférieur ne compense pas une dégradation d’un critère supérieur (tolérance numérique de 1e-9). Les critères utilisent les écarts entre moyennes d’équipe ; la taille est normalisée par 20 cm et chaque compétence par un point, avec un poids égal pour les six compétences. La couverture des postes attribue au plus un poste à chaque joueur. La recherche utilise plusieurs tirages et améliorations par échanges ; elle ne garantit pas l’optimum global. Tous les présents sont répartis une fois et les effectifs diffèrent au maximum d’un joueur avant ajustement manuel.
+
+Les implémentations sont isolées dans `ENGINE_V1` et `ENGINE_V2` et enregistrées dans `ENGINES`. Pour les évolutions futures, ajouter une version indépendante plutôt que remplacer les moteurs disponibles. Le contrat est `{present, count, priority}` en entrée et `{teams, bench, source: 'local'}` en sortie ; l’interface ajoute `engineVersion`. L’adaptation de v1 aux seuls postes principaux en version 1.5 constitue la modification explicitement demandée lors de cette refonte.
+
+## Ajustements manuels
+
+Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions ne sont pas conservées après rechargement de la page.
 
 ## Vérifications
 
@@ -20,18 +37,8 @@ python3 tests/check_manual_teams.py
 python3 tests/check_engine_versions.py
 ```
 
-Le test utilise `/usr/bin/chromium`. Il vérifie la sélection multiple, la persistance, les imports historiques, l’export/réimport, l’équilibrage des postes, les effectifs incomplets et l’affichage mobile. L’appel IA est simulé ; aucune clé réelle n’est nécessaire.
+Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats historiques, les postes principaux et secondaires, la persistance, l’export/réimport, les deux moteurs, l’ordre de priorité v2, les effectifs incomplets, les déplacements et l’affichage mobile. Les appels IA sont simulés ; aucune clé réelle n’est nécessaire. La comparaison avec le moteur historique utilise des joueurs ayant chacun un seul poste principal.
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application est indépendante de la version du format JSON d’import/export, qui reste à `1`.
-
-## Ajustements manuels (version 1.3)
-
-Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Comme les propositions initiales, les compositions modifiées ne sont pas conservées après rechargement de la page.
-
-## Versions du moteur
-
-Le sélecteur « Version du moteur » choisit l’algorithme de la prochaine génération locale, y compris « Nouvelle répartition ». Le résultat indique le moteur utilisé, même après un déplacement manuel. Le sélecteur ne recalcule pas une composition existante et ne concerne pas les appels IA.
-
-Le moteur actuel est **v1.0**, indépendant de la version de l’application (1.4) et du format JSON (1). Son calcul est isolé dans `ENGINE_V1`. Pour toute évolution du calcul, conserver ce moteur et ses fonctions de score, créer une implémentation indépendante et l’ajouter au registre `ENGINES` sous une nouvelle version. Les options du sélecteur proviennent de ce registre. Une implémentation reçoit `{present, count, priority}` et retourne `{teams, bench, source: 'local'}` ; l’interface ajoute `engineVersion`.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.

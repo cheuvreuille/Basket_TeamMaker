@@ -1,5 +1,13 @@
 # Historique des versions
 
+## 1.5 — 11 novembre 2026
+
+- Poste principal unique et postes secondaires multiples, affichés séparément dans les fiches et les équipes.
+- Migration des anciens imports et du stockage local : premier poste valide comme principal, autres postes comme secondaires ; anciens joueurs sans poste conservés.
+- Moteur v1.0 adapté pour ignorer les postes secondaires.
+- Nouveau moteur v2.0 : priorité stricte à la taille et aux six compétences, puis au niveau global et au poste principal, puis aux postes secondaires.
+- Export conservant le format JSON version 1 et le champ historique `positions`, en plus des nouveaux champs.
+
 ## 1.4 — 11 novembre 2026
 
 - Sélecteur de version du moteur dans « Créer les équipes ».

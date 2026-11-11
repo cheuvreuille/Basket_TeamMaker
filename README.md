@@ -16,6 +16,7 @@ Avec Playwright Python et Chromium installés :
 
 ```sh
 python3 tests/check_positions.py
+python3 tests/check_manual_teams.py
 ```
 
 Le test utilise `/usr/bin/chromium`. Il vérifie la sélection multiple, la persistance, les imports historiques, l’export/réimport, l’équilibrage des postes, les effectifs incomplets et l’affichage mobile. L’appel IA est simulé ; aucune clé réelle n’est nécessaire.
@@ -23,3 +24,7 @@ Le test utilise `/usr/bin/chromium`. Il vérifie la sélection multiple, la pers
 ## Suivi des versions
 
 La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application est indépendante de la version du format JSON d’import/export, qui reste à `1`.
+
+## Ajustements manuels (version 1.3)
+
+Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Comme les propositions initiales, les compositions modifiées ne sont pas conservées après rechargement de la page.

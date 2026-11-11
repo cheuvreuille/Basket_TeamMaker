@@ -17,7 +17,7 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://127.0.0.1:{server.server_port}/')
         page.wait_for_url('**/basket-equipes-autonome.html')
-        assert page.locator('#appVersion').inner_text() == 'Version 1.5'
+        assert page.locator('#appVersion').inner_text() == 'Version 1.5.1'
         assert not page.locator('#manualHelp').is_visible()
         data = [dict(id=str(i), name=f'Joueur {i}', height=170 + i*10, level=i+1, positions=[i+1]) for i in range(4)]
         page.locator('#importFile').set_input_files(dict(name='players.json', mimeType='application/json', buffer=json.dumps(data).encode()))
@@ -35,6 +35,11 @@ try:
             assert page.locator('.teamline').count() == 4
             assert page.evaluate('players.every(p=>p.present)')
 
+        # Display and clipboard sort without mutating the actual engine result.
+        page.evaluate('displayResult({teams:[["3","1","0"],["2"]],bench:[],source:"local"})')
+        assert page.locator('[data-team="0"] .teamline').evaluate_all('(rows)=>rows.map(row=>row.dataset.player)') == ['0','1','3']
+        assert page.evaluate('lastResult.teams[0]') == ['3','1','0']
+        assert page.evaluate('sortedTeamPlayers(["a","b","c"],{a:{primaryPosition:null},b:{primaryPosition:5},c:{primaryPosition:1}}).map(p=>p.primaryPosition)') == [1,5,None]
         fixture()
         # Keyboard/mobile-friendly select moves the selected player only, and restores focus.
         page.locator('[data-player="0"] select').select_option('1')
@@ -46,6 +51,7 @@ try:
         assert 'Niveau moy. 2.7' in stats and 'Taille moy. 186.7 cm' in stats
         assert 'Modifiées manuellement' in page.locator('#resultMeta').inner_text()
         invariant()
+        assert page.locator('[data-team="1"] .teamline').evaluate_all('(rows)=>rows.map(row=>row.dataset.player)') == ['0','2','3']
         # Empty teams have finite/meaningful stats and can receive a player again.
         page.locator('[data-player="1"] select').select_option('1')
         assert page.locator('[data-team="0"] .empty-team').is_visible()
@@ -83,8 +89,9 @@ try:
         for width in [390, 1280]:
             page.set_viewport_size(dict(width=width, height=900))
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            assert page.locator('.move-player').first.bounding_box()['width'] <= 90
         assert not errors, errors
         browser.close()
 finally:
     server.shutdown()
-print('PASS: v1.5, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')
+print('PASS: v1.5.1, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')

@@ -25,7 +25,7 @@ Les implémentations sont isolées dans `ENGINE_V1` et `ENGINE_V2` et enregistr�
 
 ## Ajustements manuels
 
-Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions ne sont pas conservées après rechargement de la page.
+Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les joueurs sont affichés par poste principal (1 à 5, postes non renseignés en dernier), y compris dans la copie. La synthèse sous chaque nom présente le niveau global en toutes lettres, la taille en cm, le genre et le nom du poste principal. Le menu de transfert est compact. Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions ne sont pas conservées après rechargement de la page.
 
 ## Vérifications
 
@@ -41,4 +41,4 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5.1), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.

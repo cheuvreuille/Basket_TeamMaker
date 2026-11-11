@@ -1,5 +1,13 @@
 # Historique des versions
 
+## 1.5.1 — 11 novembre 2026
+
+- Synthèse sous les noms : niveau global en toutes lettres, taille en cm, genre et intitulé du poste principal (meneur, arrière, ailier, ailier fort ou pivot).
+
+- Joueurs classés par poste principal croissant (1 à 5) dans les équipes et dans la composition copiée ; postes non renseignés en dernier.
+- Ordre actualisé après chaque transfert, pour les générations locales et IA.
+- Menu de transfert compact avec libellés courts.
+
 ## 1.5 — 11 novembre 2026
 
 - Poste principal unique et postes secondaires multiples, affichés séparément dans les fiches et les équipes.

@@ -1,5 +1,11 @@
 # Historique des versions
 
+## 1.4 — 11 novembre 2026
+
+- Sélecteur de version du moteur dans « Créer les équipes ».
+- Algorithme existant conservé sous le nom « Moteur v1.0 » et isolé pour permettre l’ajout de versions indépendantes.
+- Version du moteur affichée dans le résultat et conservée après les ajustements manuels.
+
 ## 1.3 — 7 novembre 2026
 
 - Déplacement manuel des joueurs entre équipes par glisser-déposer ou menu de destination, utilisable au clavier et sur mobile.

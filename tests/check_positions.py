@@ -76,29 +76,29 @@ try:
         assert page.evaluate('players.every(p=>p.positions.length===0)')
 
         # A flexible player covers only one slot; matching handles constrained teammates.
-        assert page.evaluate('positionCoverage([{positions:[1,2,3,4,5]}])') == 1
-        assert page.evaluate('positionCoverage([{positions:[1,2]},{positions:[1]}])') == 2
-        assert page.evaluate('positionCoverage([{positions:[]},{positions:[]}])') == 0
+        assert page.evaluate('ENGINE_V1.positionCoverage([{positions:[1,2,3,4,5]}])') == 1
+        assert page.evaluate('ENGINE_V1.positionCoverage([{positions:[1,2]},{positions:[1]}])') == 2
+        assert page.evaluate('ENGINE_V1.positionCoverage([{positions:[]},{positions:[]}])') == 0
 
         # Same attributes: only the new positions distinguish good and bad team splits.
         positioned = [dict(player, positions=[i % 5 + 1]) for i, player in enumerate(legacy)]
         upload(positioned)
         assert page.evaluate('''()=>{
-          const w={...weights(),positions:positionContext(players,2)};
+          const w={...ENGINE_V1.weights(),positions:ENGINE_V1.positionContext(players,2)};
           const good=[players.slice(0,5),players.slice(5)];
           const bad=[[0,1,2,5,6].map(i=>players[i]),[3,4,7,8,9].map(i=>players[i])];
-          return penalty(good,w)<penalty(bad,w);
+          return ENGINE_V1.penalty(good,w)<ENGINE_V1.penalty(bad,w);
         }''')
         for priority in ['balanced', 'roles', 'level', 'height', 'speed']:
             page.locator('#priority').select_option(priority)
             page.locator('#generateBtn').click()
-            assert page.evaluate('lastResult.teams.every(t=>positionCoverage(t.map(id=>players.find(p=>p.id===id)))===5)')
+            assert page.evaluate('lastResult.teams.every(t=>ENGINE_V1.positionCoverage(t.map(id=>players.find(p=>p.id===id)))===5)')
             assert page.locator('.teamline').count() == 10
         # Flexible players can be used for different slots in each team.
         flexible = [dict(player, positions=[1,2] if i % 5 == 0 else [i % 5 + 1]) for i, player in enumerate(legacy)]
         upload(flexible)
         page.locator('#generateBtn').click()
-        assert page.evaluate('lastResult.teams.every(t=>positionCoverage(t.map(id=>players.find(p=>p.id===id)))===5)')
+        assert page.evaluate('lastResult.teams.every(t=>ENGINE_V1.positionCoverage(t.map(id=>players.find(p=>p.id===id)))===5)')
 
         # Uneven teams, missing information, absent players and impossible coverage.
         mixed = [dict(player, positions=[1,2] if i % 2 else [], present=i != 9) for i, player in enumerate(legacy)]

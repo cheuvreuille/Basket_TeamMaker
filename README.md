@@ -17,6 +17,7 @@ Avec Playwright Python et Chromium installés :
 ```sh
 python3 tests/check_positions.py
 python3 tests/check_manual_teams.py
+python3 tests/check_engine_versions.py
 ```
 
 Le test utilise `/usr/bin/chromium`. Il vérifie la sélection multiple, la persistance, les imports historiques, l’export/réimport, l’équilibrage des postes, les effectifs incomplets et l’affichage mobile. L’appel IA est simulé ; aucune clé réelle n’est nécessaire.
@@ -28,3 +29,9 @@ La version de l’application est affichée en haut du site (`appVersion` dans `
 ## Ajustements manuels (version 1.3)
 
 Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Comme les propositions initiales, les compositions modifiées ne sont pas conservées après rechargement de la page.
+
+## Versions du moteur
+
+Le sélecteur « Version du moteur » choisit l’algorithme de la prochaine génération locale, y compris « Nouvelle répartition ». Le résultat indique le moteur utilisé, même après un déplacement manuel. Le sélecteur ne recalcule pas une composition existante et ne concerne pas les appels IA.
+
+Le moteur actuel est **v1.0**, indépendant de la version de l’application (1.4) et du format JSON (1). Son calcul est isolé dans `ENGINE_V1`. Pour toute évolution du calcul, conserver ce moteur et ses fonctions de score, créer une implémentation indépendante et l’ajouter au registre `ENGINES` sous une nouvelle version. Les options du sélecteur proviennent de ce registre. Une implémentation reçoit `{present, count, priority}` et retourne `{teams, bench, source: 'local'}` ; l’interface ajoute `engineVersion`.

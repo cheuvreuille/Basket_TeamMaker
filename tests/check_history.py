@@ -43,7 +43,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def maker():page.locator('#makerTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 2.0'
+  assert page.locator('#appVersion').inner_text()=='Version 2.0.1'
   assert page.locator('#makerTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
   history()
@@ -76,10 +76,15 @@ try:
   assert len(records())==1 and records()[0]['id']==first_id
   history()
   assert page.locator('#attendanceChart svg').count()==1
-  assert page.locator('#attendanceChart rect').count()==1
-  assert page.locator('#participationChart polyline').count()==4
+  assert page.locator('#attendanceChart polyline').count()==1
+  assert page.locator('#attendanceChart circle').count()==1
+  assert page.locator('#attendanceChart rect').count()==0
+  assert page.locator('#participationChart').count()==0
+  assert page.locator('#participationData table').is_visible()
+  assert page.locator('#participationData tbody tr').count()==6
+  assert page.locator('#participationData tbody tr').last.locator('td').last.text_content()=='0'
   assert page.locator('#attendanceData td').all_text_contents()==['20/11/2026','4']
-  # Second day includes all six; cumulative lines preserve the earlier zeros.
+  # Second day includes all six: the ranking sorts descending and resolves ties alphabetically.
   maker();page.clock.set_fixed_time(datetime(2026,11,21,10,tzinfo=timezone.utc))
   page.locator('#allBtn').click()
   # Stale generated composition must not save incorrect attendance.
@@ -89,10 +94,8 @@ try:
   history()
   assert len(records())==2
   assert page.locator('#attendanceData tbody tr').nth(1).locator('td').all_text_contents()==['21/11/2026','6']
-  page.locator('#participationPlayer').select_option('p4')
-  assert page.locator('#participationChart polyline').count()==1
-  assert page.locator('#participationData tbody tr').locator('th,td').all_text_contents()==['Joueur 4','0','1']
-  page.locator('#participationPlayer').select_option('')
+  assert page.locator('#participationData tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.rankingPlayer)')==['p0','p1','p2','p3','p4','p5']
+  assert page.locator('#participationData tbody tr td:last-child').all_text_contents()==['2','2','2','2','1','1']
   # Edit an old day without touching the current roster/results.
   current_roster=page.evaluate('JSON.stringify(players)')
   current_result=page.evaluate('JSON.stringify(lastResult)')
@@ -107,7 +110,8 @@ try:
   assert len(first['players'])==3 and first['teams'][0]['name']=='Les Bleus'
   assert next(p for p in first['players'] if p['id']=='p0')['name']=='Nom historique'
   assert page.locator('#attendanceData tbody tr').first.locator('td').all_text_contents()==['20/11/2026','3']
-  assert page.locator('#participationData tbody tr').filter(has_text='Joueur 1').locator('th,td').all_text_contents()==['Joueur 1','0','1']
+  assert page.locator('[data-ranking-player="p1"] td').last.text_content()=='1'
+  assert page.locator('#participationData tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.rankingPlayer)')==['p0','p2','p3','p1','p4','p5']
   # Remove a team: participants remain present and become unassigned.
   page.locator('.history-delete-team').first.click();page.locator('#saveHistoryEdits').click()
   first=next(s for s in records() if s['id']==first_id)
@@ -156,13 +160,14 @@ try:
   upload(package)
   page.reload();history()
   assert records()==history_before
-  assert page.locator('#attendanceChart rect').count()==2
+  assert page.locator('#attendanceChart circle').count()==2
+  assert page.locator('#attendanceChart polyline').count()==1
   # Delete an entire day and verify recalculation.
   page.locator('#historyDay').select_option(first_id)
   page.once('dialog',lambda d:d.accept());page.locator('#deleteSession').click()
   assert len(records())==1
   assert page.locator('#attendanceData tbody tr').count()==1
-  assert page.locator('#participationData tbody tr').first.locator('td').all_text_contents()==['1']
+  assert page.locator('#participationData tbody tr td:last-child').all_text_contents()==['1']*6
   for width in [1280,390]:
    page.set_viewport_size(dict(width=width,height=960))
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
@@ -175,4 +180,4 @@ try:
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
-print('PASS: original app untouched outside IO; tabs, daily save/local date, duplicate/stale safeguards, both charts, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')
+print('PASS: original app untouched outside IO; tabs, daily save/local date, duplicate/stale safeguards, attendance curve, descending player ranking, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')

@@ -1,5 +1,12 @@
 # Historique des versions
 
+## 2.0.1 — 19 novembre 2026
+
+- Présences globales par jour affichées sous forme de courbe, avec un point par séance.
+- Graphique des participations par joueur remplacé par un tableau : rang, joueur et nombre total de participations, par ordre décroissant (nom alphabétique en cas d’égalité).
+- Joueurs de l’effectif sans participation affichés à zéro et anciens participants conservés dans le classement.
+- Calcul des participations, enregistrement des séances et format JSON inchangés.
+
 ## 2.0 — 19 novembre 2026
 
 - Onglets « Team Maker » et « Statistiques & suivi » ; services existants conservés dans le premier.

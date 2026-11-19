@@ -44,7 +44,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.0), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.0.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -62,8 +62,8 @@ L’onglet **Team Maker** conserve le fonctionnement actuel. Après une généra
 
 L’onglet **Statistiques & suivi** affiche :
 
-- Le nombre de présents pour chaque jour enregistré.
-- Une courbe cumulative des participations de chaque joueur, avec un filtre par joueur, une légende et un tableau de valeurs. L’identité est suivie par identifiant de joueur, pas par nom.
+- Une courbe du nombre de présents pour chaque jour enregistré, avec un point par séance.
+- Un tableau de classement des joueurs, du plus au moins présent, avec le rang et le nombre total de participations. Les égalités sont départagées par nom. Les joueurs actuels sans présence sont affichés à zéro ; les anciens participants restent visibles même s’ils ont quitté l’effectif. Les noms courants sont utilisés pour les joueurs de l’effectif, et les derniers noms enregistrés pour les autres. L’identité est suivie par identifiant de joueur, pas par nom.
 - Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
 
 Les corrections portent uniquement sur l’historique. Elles ne modifient pas les joueurs, présences ou compositions du Team Maker. Les copies de profils sont conservées pour permettre de futurs suivis de complémentarité ; cette première version présente les deux statistiques de présence demandées.

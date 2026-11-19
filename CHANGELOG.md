@@ -1,5 +1,11 @@
 # Historique des versions
 
+## 1.5.2 — 19 novembre 2026
+
+- Couleurs par équipe : noir, blanc, bleu, jaune, violet et vert ; noir et blanc pour les deux premières équipes.
+- Choix d’une couleur de la palette ou d’une couleur personnalisée dans chaque carte d’équipe.
+- Couleurs conservées lors des transferts et des nouvelles générations pendant la session ; contraste du numéro adapté automatiquement.
+
 ## 1.5.1 — 11 novembre 2026
 
 - Synthèse sous les noms : niveau global en toutes lettres, taille en cm, genre et intitulé du poste principal. Les légendes restent dans l’effectif ; les équipes utilisent le format compact « Confirmé · 175 cm · Homme · Meneur ».

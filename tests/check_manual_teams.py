@@ -17,7 +17,7 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://127.0.0.1:{server.server_port}/')
         page.wait_for_url('**/basket-equipes-autonome.html')
-        assert page.locator('#appVersion').inner_text() == 'Version 1.5.1'
+        assert page.locator('#appVersion').inner_text() == 'Version 1.5.2'
         assert not page.locator('#manualHelp').is_visible()
         data = [dict(id=str(i), name=f'Joueur {i}', height=170 + i*10, level=i+1, positions=[i+1]) for i in range(4)]
         page.locator('#importFile').set_input_files(dict(name='players.json', mimeType='application/json', buffer=json.dumps(data).encode()))
@@ -25,6 +25,21 @@ try:
         page.locator('#generateBtn').click()
         assert page.locator('#manualHelp').is_visible()
         assert page.locator('.move-player').count() == 4
+
+        # Team palette and custom colors update only the selected team.
+        assert page.locator('[data-team="0"] .team-palette').input_value() == '#171717'
+        assert page.locator('[data-team="1"] .team-palette').input_value() == '#ffffff'
+        original_teams = page.evaluate('lastResult.teams')
+        for color in ['#171717','#ffffff','#2563eb','#facc15','#9333ea','#16a34a']:
+            page.locator('[data-team="0"] .team-palette').select_option(color)
+            assert page.locator('[data-team="0"]').evaluate('(e)=>e.style.getPropertyValue("--team-color")') == color
+        page.locator('[data-team="0"] .team-custom-color').fill('#ff8800')
+        assert page.locator('[data-team="0"] .team-palette').input_value() == ''
+        assert page.evaluate('teamColors[0]') == '#ff8800'
+        assert page.locator('[data-team="1"] .team-palette').input_value() == '#ffffff'
+        assert page.evaluate('lastResult.teams') == original_teams
+        assert page.evaluate('teamInk("#ffffff")') == '#000000'
+        assert page.evaluate('teamInk("#171717")') == '#ffffff'
 
         def fixture(source='local', count=2):
             teams = [['0','1'], ['2','3']] if count == 2 else [['0','1'], ['2'], ['3'], []]
@@ -51,6 +66,7 @@ try:
         assert 'Niveau moy. 2.7' in stats and 'Taille moy. 186.7 cm' in stats
         assert 'Modifiées manuellement' in page.locator('#resultMeta').inner_text()
         invariant()
+        assert page.locator('[data-team="0"] .team-custom-color').input_value() == '#ff8800'
         assert page.locator('[data-team="1"] .teamline').evaluate_all('(rows)=>rows.map(row=>row.dataset.player)') == ['0','2','3']
         # Empty teams have finite/meaningful stats and can receive a player again.
         page.locator('[data-player="1"] select').select_option('1')
@@ -84,6 +100,9 @@ try:
         # A new generation replaces manual changes and their marker.
         page.locator('#generateBtn').click()
         assert page.locator('.team').count() == 4
+        assert page.locator('[data-team="0"] .team-custom-color').input_value() == '#ff8800'
+        assert page.locator('[data-team="2"] .team-palette').input_value() == '#2563eb'
+        assert page.locator('[data-team="3"] .team-palette').input_value() == '#facc15'
         assert 'Modifiées manuellement' not in page.locator('#resultMeta').inner_text()
         invariant()
         for width in [390, 1280]:
@@ -94,4 +113,4 @@ try:
         browser.close()
 finally:
     server.shutdown()
-print('PASS: v1.5.1, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')
+print('PASS: v1.5.2, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')

@@ -41,4 +41,8 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5.1), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5.2), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.
+
+## Couleurs des équipes (1.5.2)
+
+Chaque carte d’équipe propose la palette noir, blanc, bleu, jaune, violet et vert, ainsi qu’un sélecteur de couleur personnalisée. Les valeurs initiales suivent cet ordre : les deux premières équipes sont donc noires et blanches. Les couleurs restent attachées aux numéros d’équipe lors des transferts et des nouvelles répartitions dans la session. Elles sont réinitialisées au rechargement de la page.

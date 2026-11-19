@@ -17,11 +17,12 @@ Les anciens tableaux de joueurs, objets version 1 et données du navigateur sont
 Le sélecteur « Version du moteur » choisit l’algorithme de la prochaine génération locale, y compris « Nouvelle répartition ». Le résultat indique le moteur utilisé, même après un déplacement manuel. Changer le sélecteur ne recalcule pas une composition existante et ne concerne pas les appels IA.
 
 - **Moteur v1.0** : calcul historique et priorités historiques conservés, avec uniquement le poste principal utilisé pour l’équilibrage des postes. Les secondaires sont ignorés.
+- **Moteur v3.0** : reprend les trois priorités du moteur 2.0 et ajoute au premier score l’équilibre du jeu en équipe (moyenne des tendances et proportions de chaque profil extrême). Il favorise leur répartition entre équipes sans valoriser une extrémité par rapport à l’autre. Si tous les joueurs sont équilibrés, ses scores sont identiques à ceux du moteur 2.0.
 - **Moteur v2.0** : ordre fixe de comparaison des compositions : (1) taille et six compétences, (2) niveau global et répartition des postes principaux, (3) couverture complémentaire permise par les secondaires et répartition de ces derniers. Le sélecteur historique de priorité est désactivé pour ce moteur.
 
 V2 compare ces trois scores dans l’ordre, sans somme pondérée entre priorités : un gain sur un critère de rang inférieur ne compense pas une dégradation d’un critère supérieur (tolérance numérique de 1e-9). Les critères utilisent les écarts entre moyennes d’équipe ; la taille est normalisée par 20 cm et chaque compétence par un point, avec un poids égal pour les six compétences. La couverture des postes attribue au plus un poste à chaque joueur. La recherche utilise plusieurs tirages et améliorations par échanges ; elle ne garantit pas l’optimum global. Tous les présents sont répartis une fois et les effectifs diffèrent au maximum d’un joueur avant ajustement manuel.
 
-Les implémentations sont isolées dans `ENGINE_V1` et `ENGINE_V2` et enregistrées dans `ENGINES`. Pour les évolutions futures, ajouter une version indépendante plutôt que remplacer les moteurs disponibles. Le contrat est `{present, count, priority}` en entrée et `{teams, bench, source: 'local'}` en sortie ; l’interface ajoute `engineVersion`. L’adaptation de v1 aux seuls postes principaux en version 1.5 constitue la modification explicitement demandée lors de cette refonte.
+Les implémentations sont isolées dans `ENGINE_V1`, `ENGINE_V2` et `ENGINE_V3` et enregistrées dans `ENGINES`. Pour les évolutions futures, ajouter une version indépendante plutôt que remplacer les moteurs disponibles. Le contrat est `{present, count, priority}` en entrée et `{teams, bench, source: 'local'}` en sortie ; l’interface ajoute `engineVersion`. L’adaptation de v1 aux seuls postes principaux en version 1.5 constitue la modification explicitement demandée lors de cette refonte.
 
 ## Ajustements manuels
 
@@ -32,6 +33,7 @@ Après une génération locale ou IA, glisser un joueur sur une autre équipe, o
 Avec Playwright Python et Chromium installés :
 
 ```sh
+python3 tests/check_teamwork.py
 python3 tests/check_positions.py
 python3 tests/check_manual_teams.py
 python3 tests/check_engine_versions.py
@@ -41,8 +43,14 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.5.2), les versions des moteurs (1.0 et 2.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.6), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
 Chaque carte d’équipe propose la palette noir, blanc, bleu, jaune, violet et vert, ainsi qu’un sélecteur de couleur personnalisée. Les valeurs initiales suivent cet ordre : les deux premières équipes sont donc noires et blanches. Les couleurs restent attachées aux numéros d’équipe lors des transferts et des nouvelles répartitions dans la session. Elles sont réinitialisées au rechargement de la page.
+
+## Jeu en équipe (1.6)
+
+La fiche de chaque joueur comporte une jauge à trois niveaux : **−1 : Trop perso**, **0 : Équilibré**, **1 : Trop altruiste**. La valeur est conservée lors des modifications, des rechargements et des exports JSON dans le champ numérique `teamwork`. Les fichiers JSON et les données locales qui ne comportent pas ce champ reçoivent automatiquement la valeur `0`. Les valeurs invalides sont également ramenées à `0`. Le format JSON reste en version 1. Les exports restent lisibles par les anciennes versions de l’application, qui ignorent ce champ supplémentaire.
+
+Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les calculs des moteurs **1.0 et 2.0** sont inchangés et l’ignorent. Les consignes de l’option IA décrivent également ce nouveau champ.

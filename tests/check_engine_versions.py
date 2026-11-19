@@ -22,7 +22,7 @@ try:
   old.goto(base+'/previous.html')
   page.goto(base+'/basket-equipes-autonome.html')
   assert page.locator('#engineVersion').input_value()=='1.0'
-  assert page.locator('#engineVersion option').all_text_contents()==['Moteur v1.0','Moteur v2.0']
+  assert page.locator('#engineVersion option').all_text_contents()==['Moteur v1.0','Moteur v2.0','Moteur v3.0']
   fixture='''()=>{
    players=Array.from({length:11},(_,i)=>({id:String(i),name:'Joueur '+i,height:160+i*5,level:1+i%5,gender:'unspecified',primaryPosition:1+i%5,secondaryPositions:[],positions:[1+i%5],present:i!==10,skills:{creation:1+i%5,shooting:3,rebound:4,speed:2,defense:3,stamina:4}}));render();
   }'''

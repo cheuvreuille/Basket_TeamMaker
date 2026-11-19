@@ -1,5 +1,12 @@
 # Historique des versions
 
+## 1.6 — 19 novembre 2026
+
+- Jauge « Jeu en équipe » : −1 Trop perso, 0 Équilibré, 1 Trop altruiste, avec sauvegarde dans les fiches et les exports.
+- Import et migration du stockage local rétrocompatibles : « Équilibré » par défaut si l’information est absente ou invalide.
+- Nouveau moteur 3.0, basé sur les priorités du moteur 2 et intégrant l’équilibre des tendances et la répartition des profils extrêmes dans son premier critère.
+- Moteurs 1.0 et 2.0 conservés sans modification de leur code ni prise en compte du jeu en équipe.
+
 ## 1.5.2 — 19 novembre 2026
 
 - Couleurs par équipe : noir, blanc, bleu, jaune, violet et vert ; noir et blanc pour les deux premières équipes.

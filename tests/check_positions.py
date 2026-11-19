@@ -84,9 +84,9 @@ try:
   }''')
   # Both engines: no duplicates, absent players excluded, balanced counts even with unknown roles.
   upload([dict(v,positions=[1,2] if i%2 else [],present=i!=9) for i,v in enumerate(legacy)])
-  for engine in ['1.0','2.0']:
+  for engine in ['1.0','2.0','3.0']:
    page.locator('#engineVersion').select_option(engine)
-   assert page.locator('#priority').is_disabled()==(engine=='2.0')
+   assert page.locator('#priority').is_disabled()==(engine!='1.0')
    for count in [2,3,4]:
     page.locator('#teamCount').select_option(str(count))
     page.locator('#generateBtn').click()

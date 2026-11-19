@@ -33,6 +33,7 @@ Après une génération locale ou IA, glisser un joueur sur une autre équipe, o
 Avec Playwright Python et Chromium installés :
 
 ```sh
+python3 tests/check_teammates.py
 python3 tests/check_history.py
 python3 tests/check_teamwork.py
 python3 tests/check_positions.py
@@ -44,7 +45,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.0.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -88,3 +89,11 @@ Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copie
 - Les anciennes versions de l’application peuvent encore lire `players`, mais ignorent `sessions` et ne le réexportent pas.
 
 Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de la clé existante des joueurs. Aucun serveur, compte ni service externe n’est nécessaire. Exportez régulièrement le JSON pour conserver une sauvegarde des deux ensembles de données.
+
+## Coéquipiers les plus fréquents (2.1)
+
+Dans **Statistiques & suivi**, choisir un **Joueur de référence**. Il apparaît au centre d’un réseau de cercles reliés : le nombre indique les séances jouées dans la même équipe, et les cercles les plus grands et foncés correspondent aux coéquipiers les plus fréquents. La taille et la couleur sont relatives au maximum du joueur sélectionné. Les noms complets et les comptes sont disponibles au survol, au clavier et dans la liste détaillée.
+
+Le calcul utilise uniquement les équipes des séances enregistrées, pas les compositions courantes non sauvegardées. Une paire est comptée une fois par séance ; adversaires, présents non affectés et joueur lui-même sont exclus. Le suivi repose sur les identifiants, conserve les joueurs archivés et se recalcule après correction, suppression ou import. Les noms suivent la même règle que le classement : nom courant si le joueur est encore dans l’effectif, sinon dernier nom enregistré.
+
+La vue affiche les huit coéquipiers les plus fréquents par défaut pour rester lisible. Le sélecteur permet d’en afficher seize ou tous ; la liste complète reste disponible dans tous les cas. Pour les réseaux importants, plusieurs anneaux sont utilisés et le schéma peut défiler dans son cadre, notamment sur mobile. À égalité, le tri est alphabétique. Aucune nouvelle donnée ni version de format JSON n’est nécessaire : les relations sont calculées à partir des séances existantes.

@@ -1,5 +1,13 @@
 # Historique des versions
 
+## 2.1 — 19 novembre 2026
+
+- Vue des coéquipiers les plus fréquents dans « Statistiques & suivi », avec joueur de référence sélectionné par liste déroulante.
+- Réseau radial : référence au centre, coéquipiers reliés et cercles plus grands/foncés selon les séances communes dans la même équipe.
+- Choix des 8 ou 16 coéquipiers les plus fréquents, ou de tous ; liste complète avec les comptes exacts.
+- Adversaires, joueurs non affectés et simple présence simultanée exclus du calcul ; anciens joueurs conservés via l’historique.
+- Recalcul après enregistrement, correction, suppression ou import de séances, sans changement du format JSON ni des moteurs.
+
 ## 2.0.1 — 19 novembre 2026
 
 - Présences globales par jour affichées sous forme de courbe, avec un point par séance.

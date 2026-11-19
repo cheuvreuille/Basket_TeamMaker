@@ -26,7 +26,7 @@ try:
   def upload(data):
    page.locator('#importFile').set_input_files(dict(name='players.json',mimeType='application/json',buffer=json.dumps(data).encode()))
    page.wait_for_function('document.getElementById("importFile").value === ""')
-  assert page.locator('#appVersion').inner_text()=='Version 2.0.1'
+  assert page.locator('#appVersion').inner_text()=='Version 2.1'
   assert page.locator('#teamwork').input_value()=='0'
   # Pre-feature browser state and both import formats migrate to balanced.
   page.evaluate('(data)=>localStorage.setItem("basket-balancer-v1",JSON.stringify(data))',base)

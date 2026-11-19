@@ -26,13 +26,14 @@ Les implémentations sont isolées dans `ENGINE_V1`, `ENGINE_V2` et `ENGINE_V3` 
 
 ## Ajustements manuels
 
-Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les joueurs sont affichés par poste principal (1 à 5, postes non renseignés en dernier), y compris dans la copie. La synthèse sous chaque nom présente le niveau global en toutes lettres, la taille en cm, le genre et le nom du poste principal. Le menu de transfert est compact. Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions ne sont pas conservées après rechargement de la page.
+Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les joueurs sont affichés par poste principal (1 à 5, postes non renseignés en dernier), y compris dans la copie. La synthèse sous chaque nom présente le niveau global en toutes lettres, la taille en cm, le genre et le nom du poste principal. Le menu de transfert est compact. Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions non enregistrées ne sont pas conservées après rechargement de la page. Le bouton « Save » permet désormais de les archiver dans le suivi.
 
 ## Vérifications
 
 Avec Playwright Python et Chromium installés :
 
 ```sh
+python3 tests/check_history.py
 python3 tests/check_teamwork.py
 python3 tests/check_positions.py
 python3 tests/check_manual_teams.py
@@ -43,7 +44,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (1.6.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.0), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -54,3 +55,36 @@ Chaque carte d’équipe propose la palette noir, blanc, bleu, jaune, violet et 
 La fiche de chaque joueur comporte une jauge à trois niveaux : **−1 : Trop perso**, **0 : Équilibré**, **1 : Trop altruiste**. La valeur est conservée lors des modifications, des rechargements et des exports JSON dans le champ numérique `teamwork`. Les fichiers JSON et les données locales qui ne comportent pas ce champ reçoivent automatiquement la valeur `0`. Les valeurs invalides sont également ramenées à `0`. Le format JSON reste en version 1. Les exports restent lisibles par les anciennes versions de l’application, qui ignorent ce champ supplémentaire.
 
 Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les calculs des moteurs **1.0 et 2.0** sont inchangés et l’ignorent. Les consignes de l’option IA décrivent également ce nouveau champ.
+
+## Statistiques & suivi (2.0)
+
+L’onglet **Team Maker** conserve le fonctionnement actuel. Après une génération locale ou IA et les éventuels transferts, **Save** enregistre une séance datée du jour local du navigateur. Elle contient les joueurs présents, une copie de leurs profils, les équipes affichées, leurs couleurs et la version du moteur. Le bouton demande de régénérer les équipes si les présences ne correspondent plus à la composition affichée. Un second enregistrement le même jour propose de remplacer la séance ; chaque joueur ne participe donc qu’une fois par jour.
+
+L’onglet **Statistiques & suivi** affiche :
+
+- Le nombre de présents pour chaque jour enregistré.
+- Une courbe cumulative des participations de chaque joueur, avec un filtre par joueur, une légende et un tableau de valeurs. L’identité est suivie par identifiant de joueur, pas par nom.
+- Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
+
+Les corrections portent uniquement sur l’historique. Elles ne modifient pas les joueurs, présences ou compositions du Team Maker. Les copies de profils sont conservées pour permettre de futurs suivis de complémentarité ; cette première version présente les deux statistiques de présence demandées.
+
+### Sauvegarde et compatibilité
+
+L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et la version JSON `1`, avec un champ supplémentaire :
+
+```json
+{
+  "version": 1,
+  "players": [],
+  "sessions": []
+}
+```
+
+Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copies des participants), `teams` (`id`, `name`, `color`, `playerIds`), `bench` (présents non affectés), `source`, `engineVersion` et `manuallyEdited`. Les références aux joueurs sont propres aux copies de la séance : un joueur retiré plus tard de l’effectif reste dans l’historique. Une date ne peut contenir qu’une séance ; chaque participant ne peut être affecté qu’une fois.
+
+- Les anciens tableaux de joueurs et les objets JSON sans `sessions` remplacent toujours l’effectif et **conservent l’historique local existant**.
+- Un objet avec `sessions` remplace l’effectif et l’historique après validation. `"sessions": []` vide explicitement l’historique.
+- Un historique invalide (date en double, joueur inconnu dans une équipe, affectation en double…) bloque l’import entier : aucune modification partielle de l’effectif.
+- Les anciennes versions de l’application peuvent encore lire `players`, mais ignorent `sessions` et ne le réexportent pas.
+
+Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de la clé existante des joueurs. Aucun serveur, compte ni service externe n’est nécessaire. Exportez régulièrement le JSON pour conserver une sauvegarde des deux ensembles de données.

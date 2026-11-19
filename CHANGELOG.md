@@ -1,5 +1,16 @@
 # Historique des versions
 
+## 2.0 — 19 novembre 2026
+
+- Onglets « Team Maker » et « Statistiques & suivi » ; services existants conservés dans le premier.
+- Bouton « Save » pour enregistrer les présences, profils, compositions, couleurs et moteur utilisés le jour du clic.
+- Une séance par jour local, avec confirmation avant remplacement pour éviter les doubles participations.
+- Graphique des présences journalières et courbes des participations cumulées par joueur, avec filtre et tableaux de données accessibles.
+- Sélection d’une date pour corriger les participants et leur affectation, renommer ou supprimer les équipes et supprimer une séance. L’effectif courant reste indépendant.
+- Historique stocké localement et inclus dans le JSON existant sous `sessions`, sans changer le format des joueurs ni la version JSON 1.
+- Anciens imports toujours acceptés ; l’absence de `sessions` conserve l’historique présent. Validation de l’historique avant toute modification de l’import.
+- Moteurs et fonctions du Team Maker inchangés, hors import/export et ajout du bouton d’enregistrement.
+
 ## 1.6.1 — 19 novembre 2026
 
 - Moteur 3.0 sélectionné par défaut à l’ouverture du site ; moteurs 1.0 et 2.0 toujours disponibles.

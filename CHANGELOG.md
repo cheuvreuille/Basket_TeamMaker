@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.6.1 — 19 novembre 2026
+
+- Moteur 3.0 sélectionné par défaut à l’ouverture du site ; moteurs 1.0 et 2.0 toujours disponibles.
+
 ## 1.6 — 19 novembre 2026
 
 - Jauge « Jeu en équipe » : −1 Trop perso, 0 Équilibré, 1 Trop altruiste, avec sauvegarde dans les fiches et les exports.

@@ -43,7 +43,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def maker():page.locator('#makerTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 2.2'
+  assert page.locator('#appVersion').inner_text()=='Version 2.1'
   assert page.locator('#makerTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
   history()

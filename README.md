@@ -33,7 +33,6 @@ Après une génération locale ou IA, glisser un joueur sur une autre équipe, o
 Avec Playwright Python et Chromium installés :
 
 ```sh
-python3 tests/check_whatsapp_prototype.py
 python3 tests/check_teammates.py
 python3 tests/check_history.py
 python3 tests/check_teamwork.py
@@ -46,7 +45,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.2), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -98,84 +97,3 @@ Dans **Statistiques & suivi**, choisir un **Joueur de référence**. Il apparaî
 Le calcul utilise uniquement les équipes des séances enregistrées, pas les compositions courantes non sauvegardées. Une paire est comptée une fois par séance ; adversaires, présents non affectés et joueur lui-même sont exclus. Le suivi repose sur les identifiants, conserve les joueurs archivés et se recalcule après correction, suppression ou import. Les noms suivent la même règle que le classement : nom courant si le joueur est encore dans l’effectif, sinon dernier nom enregistré.
 
 La vue affiche les huit coéquipiers les plus fréquents par défaut pour rester lisible. Le sélecteur permet d’en afficher seize ou tous ; la liste complète reste disponible dans tous les cas. Pour les réseaux importants, plusieurs anneaux sont utilisés et le schéma peut défiler dans son cadre, notamment sur mobile. À égalité, le tri est alphabétique. Aucune nouvelle donnée ni version de format JSON n’est nécessaire : les relations sont calculées à partir des séances existantes.
-
-## WhatsApp integration — POC de lecture (2.2)
-
-**MAQUETTE — À NE PAS UTILISER en production avant validation des votes dans votre groupe.**
-
-La passerelle utilise **whatsapp-web.js 1.34.8**, bibliothèque non officielle, et non l’API Meta WhatsApp Business. La version et ses dépendances sont verrouillées dans `package-lock.json`. Les méthodes et champs ont été vérifiés dans le paquet distribué, notamment `selectedOptions[].localId` (y compris la valeur `0`), `voter`, `interractedAtTs` et les retraits de vote (liste d’options vide).
-
-### Démarrer sur un PC ou serveur local
-
-Prévoir Node.js 20 ou supérieur et Chromium/Chrome. Depuis le dépôt :
-
-```sh
-npm ci
-npm start
-```
-
-Le service écoute uniquement sur l’interface locale `127.0.0.1`, port `8787`, et sert aussi Team Maker à la racine. Ouvrir l’application depuis ce service est le parcours recommandé : les données du navigateur restent attachées à leur origine, donc exporter/importer le JSON permet de déplacer l’effectif et l’historique depuis GitHub Pages vers cette instance locale.
-
-Si Chromium est déjà installé, indiquer son chemin avec `WA_CHROMIUM_PATH`. Dans cet environnement cloud, l’installation a été vérifiée avec :
-
-```sh
-PUPPETEER_SKIP_DOWNLOAD=true npm --cache /tmp/basket-npm-cache ci --no-audit --no-fund
-WA_CHROMIUM_PATH=/usr/bin/chromium WA_NO_SANDBOX=1 npm start
-```
-
-`WA_NO_SANDBOX=1` est une adaptation au conteneur de développement ; le parcours PC conserve le bac à sable de Chrome par défaut. Ne pas désactiver les contrôles TLS. L’interface GitHub Pages reste autonome pour les autres fonctions, mais ne peut pas exécuter ce service Node.js.
-
-### Connexion et session
-
-1. Dans **WhatsApp integration**, saisir l’adresse du service local et cliquer sur **Connecter WhatsApp**.
-2. Scanner le QR avec WhatsApp → **Appareils connectés**. L’état passe de connexion à QR, authentification, puis connecté.
-3. Choisir le groupe de basket. Son identifiant est conservé sur le service.
-4. Cliquer sur **Importer le dernier sondage** : lecture de 500 messages récents au maximum, détection des messages `poll_creation`, filtrage par présence/entraînement ou par mot du titre. La liste permet de choisir un autre sondage pour éviter de confondre plusieurs questions.
-5. Vérifier les votes nominatifs par réponse et les comparer à WhatsApp sur 2 ou 3 sondages récents, puis sur les plus anciens accessibles. Un résultat vide n’est pas une preuve d’absence de votes.
-
-La session `LocalAuth` est conservée dans `.whatsapp-data/auth`. Le service essaie de la restaurer au démarrage, se reconnecte après une coupure réseau, et demande une nouvelle connexion après expiration/révocation. **Arrêter le suivi de connexion** arrête seulement l’actualisation de l’écran ; pour révoquer la session, utiliser WhatsApp → Appareils connectés. Aucun QR brut, nom ou contenu de conversation n’est journalisé par la passerelle.
-
-Le chemin persistant peut être changé avec `WA_DATA_DIR`. Ce dossier doit rester privé : il contient l’accès à la session et le profil synchronisé par WhatsApp Web, qui peut lui-même conserver des données. Le fichier `settings.json` contient seulement le groupe choisi et la correspondance des identités. Ce dossier, les caches, `.env` et `node_modules` sont exclus de Git. Ne pas partager une archive ou un snapshot contenant une session connectée.
-
-### Correspondance et application explicite
-
-Associer manuellement chaque identité WhatsApp à une fiche Team Maker ; aucun rapprochement automatique par nom n’est effectué. Les associations `whatsappId → playerId` sont conservées par le service et plusieurs identités d’un même joueur peuvent pointer sur sa fiche. Si un joueur est retiré de l’effectif, son ancienne association ne permet pas une application silencieuse : les votants de la réponse choisie doivent être rattachés à des fiches actuelles.
-
-Choisir la bonne réponse d’entraînement, consulter l’aperçu, puis cliquer sur **Appliquer cette réponse aux présences**. Les votes sont relus avant l’action ; s’ils ont changé, l’application demande de revoir l’aperçu. Une erreur de lecture, une association manquante ou un vote contradictoire présent/absent bloque l’application.
-
-- Mode par défaut : cocher les votants confirmés, décocher les absences/blessures explicites, conserver les autres cases. Les non-répondants et les autres réponses restent distincts des refus.
-- Mode remplacement : remplacer toute la sélection par les seuls votants de cette réponse. Les non-répondants ne sont alors pas cochés, sans être qualifiés de refus explicites dans l’aperçu.
-
-Les cases restent corrigeables manuellement dans Team Maker. Aucune équipe n’est générée et aucune séance historique n’est créée automatiquement. La resynchronisation met seulement la lecture et l’aperçu à jour, jamais les présences. Les données de démonstration ne peuvent pas être appliquées.
-
-### Fiabilité et limites
-
-Le serveur utilise `getChats`, `getChatById`, `fetchMessages({limit:500})`, `getPollVotes` et `vote_update`. Les versions successives d’un vote sont réduites au dernier vote par identité ; un retrait n’est pas un refus. Une relecture toutes les 60 secondes complète les événements `vote_update` ; l’interface peut aussi demander **Resynchroniser les votes**. La passerelle n’expose aucune route d’envoi de message ni de vote.
-
-L’accès aux votes dépend de leur disponibilité réelle dans WhatsApp Web et de la bibliothèque. Les 500 messages accessibles ne garantissent pas l’historique complet ni une reconstruction depuis janvier 2026. L’import historique et l’application automatique en arrière-plan restent des étapes futures. Informer les membres de l’équipe de la collecte avant le POC.
-
-**Validation actuelle :** dépendances installées, service HTTP lancé et testé, Chromium lancé, API et UI vérifiées avec un client WhatsApp simulé. Dans le cloud, la navigation réelle vers `web.whatsapp.com` échoue avec `ERR_TUNNEL_CONNECTION_FAILED` ; l’accès HTTPS via le proxy renvoie `403 Forbidden`. Aucun QR réel, vote réel ou historique de compte n’a donc été validé. Le test doit être poursuivi sur un PC disposant de l’accès à WhatsApp, ou après autorisation réseau dans l’environnement.
-
-### Configuration et accès
-
-- `PORT` : port local, `8787` par défaut.
-- `WA_CHROMIUM_PATH` : exécutable Chrome/Chromium si nécessaire.
-- `WA_DATA_DIR` : dossier persistant privé.
-- `WA_NO_SANDBOX` : adaptation explicite au conteneur uniquement.
-- `WA_ALLOWED_ORIGINS` : origines HTTP(S) supplémentaires, séparées par des virgules. Par exemple l’origine GitHub Pages exacte si l’on souhaite connecter cette interface à la passerelle. Le navigateur peut imposer des autorisations supplémentaires pour accéder à un service local depuis une page publique ; utiliser l’interface servie localement évite ce problème.
-
-Par défaut, le service refuse les origines étrangères et les en-têtes Host non locaux. Il ne doit pas être exposé tel quel sur Internet. Un hébergement distant nécessiterait HTTPS et une authentification dédiée ; aucun jeton WhatsApp ne doit être intégré à la page GitHub Pages.
-
-Les imports/exports existants des joueurs et séances sont inchangés. Les associations WhatsApp sont conservées séparément sur le service et ne figurent pas dans ce JSON. Les deux scripts métiers existants sont inchangés ; seul le nouveau module réalise l’application explicite en appelant les fonctions existantes `persist()` et `render()`.
-
-### Tests supplémentaires
-
-```sh
-npm test
-python3 tests/check_whatsapp_prototype.py
-python3 tests/check_whatsapp_bridge.py
-```
-
-Les tests Node simulent le client de lecture : session/QR, reconnexion, groupe, dernier sondage, votes multiples, retraits, synchronisation et contrôle des accès HTTP. Les tests navigateur couvrent les associations, les modes d’application, la relecture avant application, les erreurs, la démonstration et l’affichage mobile. Aucun de ces tests ne prouve la disponibilité réelle des votes de votre compte.
-
-Sources : [whatsapp-web.js Client](https://docs.wwebjs.dev/Client.html), [LocalAuth](https://wwebjs.dev/guide/creating-your-bot/authentication.html), et paquet npm `whatsapp-web.js@1.34.8` vérifié localement.

@@ -1,16 +1,5 @@
 # Historique des versions
 
-## 2.2 — 21 novembre 2026
-
-- Troisième onglet « WhatsApp integration », conservé comme « MAQUETTE — À NE PAS UTILISER » jusqu’à validation réelle.
-- Service Node.js local avec whatsapp-web.js 1.34.8 non officiel, QR code, LocalAuth persistant et reconnexion après coupure.
-- Sélection persistante du groupe, lecture des sondages dans les 500 messages accessibles, votants nominatifs par réponse et choix du bon sondage.
-- Correspondance WhatsApp → joueurs persistante et application explicite d’une réponse aux présences, avec relecture, contrôle des associations et des votes contradictoires.
-- Absences explicites et non-répondants distingués ; resynchronisation périodique des votes en plus de vote_update, sans modification automatique des présences.
-- Démonstration fictive isolée, paramètres et session exclus de Git, routes de lecture uniquement et service limité à l’interface locale.
-- Moteurs, historique, import/export et scripts métiers existants inchangés.
-- Tests simulés réussis ; récupération réelle non validée dans le cloud, où l’accès à WhatsApp Web est refusé par le proxy réseau (HTTP 403).
-
 ## 2.1 — 19 novembre 2026
 
 - Vue des coéquipiers les plus fréquents dans « Statistiques & suivi », avec joueur de référence sélectionné par liste déroulante.

@@ -1,0 +1,9 @@
+{
+  "name": "basket-teammaker-whatsapp",
+  "version": "2.2.0",
+  "private": true,
+  "description": "Passerelle WhatsApp en lecture seule pour Team Maker",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server/index.cjs", "test": "node --test server/*.test.cjs" },
+  "dependencies": { "qrcode": "1.5.4", "whatsapp-web.js": "1.34.8" }
+}

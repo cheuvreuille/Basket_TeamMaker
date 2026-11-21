@@ -1,5 +1,13 @@
 # Historique des versions
 
+## 3.0
+
+- **Effectif** pour consulter, ajouter, modifier et supprimer les joueurs.
+- **Entraînement** pour sélectionner les présents, générer les équipes et enregistrer la composition.
+- **Match**, réservé à une future évolution.
+- **Statistique** pour les présences, les coéquipiers fréquents et le suivi des séances.
+- **Configuration** pour le fournisseur, le modèle et la clé de l’IA. La génération IA se lance depuis Entraînement.
+
 ## 2.1 — 19 novembre 2026
 
 - Vue des coéquipiers les plus fréquents dans « Statistiques & suivi », avec joueur de référence sélectionné par liste déroulante.

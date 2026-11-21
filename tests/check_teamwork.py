@@ -26,7 +26,7 @@ try:
   def upload(data):
    page.locator('#importFile').set_input_files(dict(name='players.json',mimeType='application/json',buffer=json.dumps(data).encode()))
    page.wait_for_function('document.getElementById("importFile").value === ""')
-  assert page.locator('#appVersion').inner_text()=='Version 2.1'
+  assert page.locator('#appVersion').inner_text()=='Version 3.0'
   assert page.locator('#teamwork').input_value()=='0'
   # Pre-feature browser state and both import formats migrate to balanced.
   page.evaluate('(data)=>localStorage.setItem("basket-balancer-v1",JSON.stringify(data))',base)
@@ -71,6 +71,7 @@ try:
    return ENGINE_V3.compare(ENGINE_V3.score(good),ENGINE_V3.score(bad))<0&&JSON.stringify(ENGINE_V3.score(neutral))===JSON.stringify(ENGINE_V2.score(neutral));
   }''')
   upload([dict(player,teamwork=[-1,-1,0,0,1,1][i]) for i,player in enumerate(base[:6])])
+  page.locator('#trainingTab').click()
   page.locator('#engineVersion').select_option('3.0')
   assert page.locator('#priority').is_disabled()
   assert 'jeu en équipe' in page.locator('#engineHelp').inner_text()

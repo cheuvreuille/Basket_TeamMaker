@@ -5,20 +5,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 import json
-import re
-import subprocess
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parents[1]
-previous=subprocess.check_output(['git','show','1ce3c68:basket-equipes-autonome.html'],cwd=ROOT,text=True)
-current=(ROOT/'basket-equipes-autonome.html').read_text()
-# The original application script is byte-for-byte unchanged outside import/export.
-def application_without_io(html):
- script=re.search(r'<script>(.*?)</script>',html,re.S).group(1)
- start=script.index("$('exportBtn').onclick")
- end=script.index('\nfunction updateCount',start)
- return script[:start]+'IMPORT_EXPORT'+script[end:]
-assert application_without_io(previous)==application_without_io(current)
 class QuietHandler(SimpleHTTPRequestHandler):
  def log_message(self,*args): pass
 server=ThreadingHTTPServer(('127.0.0.1',0),partial(QuietHandler,directory=str(ROOT)))
@@ -42,16 +31,34 @@ try:
    with page.expect_download() as event:page.locator('#exportBtn').click()
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
-  def maker():page.locator('#makerTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 2.1'
-  assert page.locator('#makerTab').get_attribute('aria-selected')=='true'
+  def training():page.locator('#trainingTab').click()
+  assert page.locator('#appVersion').inner_text()=='Version 3.0'
+  assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
+  assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
+  upload(roster)
+  assert page.locator('#roster .player').count()==6
+  assert page.locator('#roster input[type=checkbox]').count()==0
   history()
-  assert not page.locator('#makerPanel').is_visible()
+  assert not page.locator('#trainingPanel').is_visible()
   assert 'Aucune séance' in page.locator('#attendanceChart').inner_text()
   page.locator('#historyTab').press('ArrowLeft')
-  assert page.locator('#makerPanel').is_visible()
-  upload(roster)
+  assert page.locator('#matchTab').get_attribute('aria-selected')=='true'
+  assert page.locator('#matchPanel').inner_html()==''
+  page.locator('#matchTab').press('End')
+  assert page.locator('#configTab').get_attribute('aria-selected')=='true'
+  page.locator('#configTab').press('ArrowRight')
+  assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
+  page.locator('#rosterTab').press('ArrowRight')
+  assert page.locator('#trainingPanel').is_visible()
+  assert page.locator('[role=tabpanel]:visible').count()==1
+  assert page.locator('#attendanceRoster [data-edit]').count()==0
+  assert page.locator('#presentCount').inner_text()=='4 présents'
+  page.locator('#noneBtn').click()
+  assert page.locator('#presentCount').inner_text()=='0 présent'
+  for i in range(4):
+   page.get_by_role('checkbox',name=f'Présence de Joueur {i}').check()
+  assert page.locator('#presentCount').inner_text()=='4 présents'
   page.locator('#generateBtn').click()
   page.wait_for_function('!document.getElementById("saveSessionBtn").disabled')
   original=page.evaluate('JSON.stringify(lastResult)')
@@ -85,7 +92,7 @@ try:
   assert page.locator('#participationData tbody tr').last.locator('td').last.text_content()=='0'
   assert page.locator('#attendanceData td').all_text_contents()==['20/11/2026','4']
   # Second day includes all six: the ranking sorts descending and resolves ties alphabetically.
-  maker();page.clock.set_fixed_time(datetime(2026,11,21,10,tzinfo=timezone.utc))
+  training();page.clock.set_fixed_time(datetime(2026,11,21,10,tzinfo=timezone.utc))
   page.locator('#allBtn').click()
   # Stale generated composition must not save incorrect attendance.
   page.locator('#saveSessionBtn').click()
@@ -180,4 +187,4 @@ try:
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
-print('PASS: original app untouched outside IO; tabs, daily save/local date, duplicate/stale safeguards, attendance curve, descending player ranking, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')
+print('PASS: five-tab navigation, attendance selection, daily save/local date, duplicate/stale safeguards, attendance curve, descending player ranking, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')

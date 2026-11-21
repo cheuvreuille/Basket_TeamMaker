@@ -21,6 +21,7 @@ try:
   old.route('**/previous.html',lambda route:route.fulfill(body=previous,content_type='text/html'))
   old.goto(base+'/previous.html')
   page.goto(base+'/basket-equipes-autonome.html')
+  page.locator('#trainingTab').click()
   assert page.locator('#engineVersion').input_value()=='3.0'
   assert page.locator('#priority').is_disabled()
   assert 'V3' in page.locator('#engineHelp').inner_text()
@@ -53,6 +54,7 @@ try:
   html=(ROOT/'basket-equipes-autonome.html').read_text().replace("'1.0':Object.freeze({label:'Moteur v1.0',...ENGINE_V1})", "'1.0':Object.freeze({label:'Moteur v1.0',...ENGINE_V1}),'test':{label:'Test engine',generate:({present,count,priority})=>{window.received={count,priority};return {teams:[present.map(p=>p.id)],bench:[],source:'local'}}}")
   page.route('**/extended.html',lambda route:route.fulfill(body=html,content_type='text/html'))
   page.goto(base+'/extended.html')
+  page.locator('#trainingTab').click()
   page.evaluate(fixture)
   page.locator('#engineVersion').select_option('test')
   page.locator('#generateBtn').click()

@@ -2,6 +2,14 @@
 
 Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossier avec `python3 -m http.server 8000`. `index.html` redirige vers l’application pour GitHub Pages.
 
+## Onglets de l’application
+
+- **Effectif** permet de gérer les fiches des joueurs.
+- **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
+- **Match** est réservé à une future évolution.
+- **Statistique** donne accès au suivi des séances, aux présences et aux coéquipiers fréquents.
+- **Configuration** regroupe le fournisseur, le modèle et la clé de l’IA. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
+
 ## Postes des joueurs
 
 Chaque fiche comporte un poste principal unique : 1 (meneur), 2 (arrière), 3 (ailier), 4 (ailier fort), 5 (pivot). Les postes secondaires sont facultatifs, en sélection multiple, et ne peuvent pas répéter le poste principal. Un poste principal est demandé lors de l’ajout ou de l’enregistrement d’une fiche. Les joueurs historiques sans poste restent utilisables dans la génération sans modification obligatoire de l’effectif.
@@ -45,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (2.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.0), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -57,17 +65,17 @@ La fiche de chaque joueur comporte une jauge à trois niveaux : **−1 : Trop pe
 
 Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les calculs des moteurs **1.0 et 2.0** sont inchangés et l’ignorent. Les consignes de l’option IA décrivent également ce nouveau champ.
 
-## Statistiques & suivi (2.0)
+## Statistique et suivi des séances
 
-L’onglet **Team Maker** conserve le fonctionnement actuel. Après une génération locale ou IA et les éventuels transferts, **Save** enregistre une séance datée du jour local du navigateur. Elle contient les joueurs présents, une copie de leurs profils, les équipes affichées, leurs couleurs et la version du moteur. Le bouton demande de régénérer les équipes si les présences ne correspondent plus à la composition affichée. Un second enregistrement le même jour propose de remplacer la séance ; chaque joueur ne participe donc qu’une fois par jour.
+Dans **Entraînement**, après une génération locale ou IA et les éventuels transferts, **Save** enregistre une séance datée du jour local du navigateur. Elle contient les joueurs présents, une copie de leurs profils, les équipes affichées, leurs couleurs et la version du moteur. Le bouton demande de régénérer les équipes si les présences ne correspondent plus à la composition affichée. Un second enregistrement le même jour propose de remplacer la séance ; chaque joueur ne participe donc qu’une fois par jour.
 
-L’onglet **Statistiques & suivi** affiche :
+L’onglet **Statistique** affiche :
 
 - Une courbe du nombre de présents pour chaque jour enregistré, avec un point par séance.
 - Un tableau de classement des joueurs, du plus au moins présent, avec le rang et le nombre total de participations. Les égalités sont départagées par nom. Les joueurs actuels sans présence sont affichés à zéro ; les anciens participants restent visibles même s’ils ont quitté l’effectif. Les noms courants sont utilisés pour les joueurs de l’effectif, et les derniers noms enregistrés pour les autres. L’identité est suivie par identifiant de joueur, pas par nom.
 - Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
 
-Les corrections portent uniquement sur l’historique. Elles ne modifient pas les joueurs, présences ou compositions du Team Maker. Les copies de profils sont conservées pour permettre de futurs suivis de complémentarité ; cette première version présente les deux statistiques de présence demandées.
+Les corrections portent uniquement sur l’historique. Elles ne modifient pas l’effectif, les présences ou les compositions en cours. Les copies de profils sont conservées pour permettre de futurs suivis de complémentarité ; cette première version présente les deux statistiques de présence demandées.
 
 ### Sauvegarde et compatibilité
 
@@ -92,7 +100,7 @@ Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de l
 
 ## Coéquipiers les plus fréquents (2.1)
 
-Dans **Statistiques & suivi**, choisir un **Joueur de référence**. Il apparaît au centre d’un réseau de cercles reliés : le nombre indique les séances jouées dans la même équipe, et les cercles les plus grands et foncés correspondent aux coéquipiers les plus fréquents. La taille et la couleur sont relatives au maximum du joueur sélectionné. Les noms complets et les comptes sont disponibles au survol, au clavier et dans la liste détaillée.
+Dans **Statistique**, choisir un **Joueur de référence**. Il apparaît au centre d’un réseau de cercles reliés : le nombre indique les séances jouées dans la même équipe, et les cercles les plus grands et foncés correspondent aux coéquipiers les plus fréquents. La taille et la couleur sont relatives au maximum du joueur sélectionné. Les noms complets et les comptes sont disponibles au survol, au clavier et dans la liste détaillée.
 
 Le calcul utilise uniquement les équipes des séances enregistrées, pas les compositions courantes non sauvegardées. Une paire est comptée une fois par séance ; adversaires, présents non affectés et joueur lui-même sont exclus. Le suivi repose sur les identifiants, conserve les joueurs archivés et se recalcule après correction, suppression ou import. Les noms suivent la même règle que le classement : nom courant si le joueur est encore dans l’effectif, sinon dernier nom enregistré.
 

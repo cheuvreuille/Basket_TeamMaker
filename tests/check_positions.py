@@ -25,7 +25,7 @@ try:
   assert page.evaluate('players.length===10&&players.every(p=>p.primaryPosition===null&&p.secondaryPositions.length===0)')
   for data in [legacy,dict(version=1,players=legacy)]:
    upload(data)
-   assert page.locator('.player').count()==10
+   assert page.locator('#roster .player').count()==10
   upload([dict(v,positions=[3,1,5,3]) for v in legacy])
   assert page.evaluate('players.every(p=>p.primaryPosition===3&&JSON.stringify(p.secondaryPositions)==="[1,5]")')
   page.reload()
@@ -50,7 +50,7 @@ try:
   def dismiss(dialog):alerts.append(dialog.message);dialog.dismiss()
   page.on('dialog',dismiss)
   page.locator('#saveBtn').click()
-  assert alerts and page.locator('.player').count()==10
+  assert alerts and page.locator('#roster .player').count()==10
   page.locator('#primaryPosition').select_option('5')
   page.locator('#position_2').check()
   page.locator('#position_4').check()
@@ -82,6 +82,17 @@ try:
    const secondary=base.map((p,i)=>({...p,secondaryPositions:i<2?[2]:[3]}));
    return [level,primary,secondary].every(data=>ENGINE_V2.compare(ENGINE_V2.score(mixed(data)),ENGINE_V2.score(grouped(data)))<0);
   }''')
+  # Roster changes must be reflected in the separate attendance panel.
+  new_id=page.evaluate('players.at(-1).id')
+  page.locator('#trainingTab').click()
+  assert page.locator(f'[data-pres="{new_id}"]').is_checked()
+  page.locator('#rosterTab').click()
+  page.remove_listener('dialog',dismiss)
+  page.once('dialog',lambda dialog:dialog.accept())
+  page.locator(f'[data-delete="{new_id}"]').click()
+  assert page.locator('#roster .player').count()==10
+  page.locator('#trainingTab').click()
+  assert page.locator(f'[data-pres="{new_id}"]').count()==0
   # Both engines: no duplicates, absent players excluded, balanced counts even with unknown roles.
   upload([dict(v,positions=[1,2] if i%2 else [],present=i!=9) for i,v in enumerate(legacy)])
   for engine in ['1.0','2.0','3.0']:
@@ -101,8 +112,16 @@ try:
    answer=dict(teams=[['0','1','2'],['3','4'],['5','6'],['7','8']],bench=[])
    route.fulfill(json=dict(choices=[dict(message=dict(content=json.dumps(answer)))]))
   page.route('https://api.openai.com/**',provider)
+  page.locator('#aiBtn').click()
+  assert 'Configuration' in page.locator('#notice').inner_text()
+  page.locator('#configTab').click()
+  assert page.locator('#provider').is_visible()
+  assert page.locator('#model').is_visible()
+  assert not page.locator('#aiBtn').is_visible()
   page.locator('#apiKey').fill('test-placeholder')
+  page.locator('#trainingTab').click()
   page.locator('#aiBtn').click();page.wait_for_function('lastResult.source==="ia"')
+  assert page.locator('#teams .team').count()==4
   for width in [390,1280]:
    page.set_viewport_size(dict(width=width,height=900))
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

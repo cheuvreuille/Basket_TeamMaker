@@ -17,11 +17,12 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://127.0.0.1:{server.server_port}/')
         page.wait_for_url('**/basket-equipes-autonome.html')
-        assert page.locator('#appVersion').inner_text() == 'Version 2.1'
+        assert page.locator('#appVersion').inner_text() == 'Version 3.0'
         assert not page.locator('#manualHelp').is_visible()
         data = [dict(id=str(i), name=f'Joueur {i}', height=170 + i*10, level=i+1, positions=[i+1]) for i in range(4)]
         page.locator('#importFile').set_input_files(dict(name='players.json', mimeType='application/json', buffer=json.dumps(data).encode()))
         page.wait_for_function('document.getElementById("importFile").value === ""')
+        page.locator('#trainingTab').click()
         page.locator('#generateBtn').click()
         assert page.locator('#manualHelp').is_visible()
         assert page.locator('.move-player').count() == 4
@@ -113,4 +114,4 @@ try:
         browser.close()
 finally:
     server.shutdown()
-print('PASS: v2.1, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')
+print('PASS: v3.0, move menu, drag/drop, empty teams, stats, clipboard, uniqueness, AI results, regeneration, responsive layout.')

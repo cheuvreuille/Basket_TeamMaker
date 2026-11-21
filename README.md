@@ -8,7 +8,7 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
 - **Match** est réservé à une future évolution.
 - **Statistique** donne accès au suivi des séances, aux présences et aux coéquipiers fréquents.
-- **Configuration** regroupe le fournisseur, le modèle et la clé de l’IA. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
+- **Configuration** regroupe les réglages de l’IA et le choix des jours affichés dans les statistiques. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
 
 ## Postes des joueurs
 
@@ -69,13 +69,18 @@ Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les
 
 Dans **Entraînement**, après une génération locale ou IA et les éventuels transferts, **Save** enregistre une séance datée du jour local du navigateur. Elle contient les joueurs présents, une copie de leurs profils, les équipes affichées, leurs couleurs et la version du moteur. Le bouton demande de régénérer les équipes si les présences ne correspondent plus à la composition affichée. Un second enregistrement le même jour propose de remplacer la séance ; chaque joueur ne participe donc qu’une fois par jour.
 
+Dans **Statistique**, choisissez **Créer une séance manuellement**, renseignez la date et ajoutez les présents depuis l’effectif. Les équipes sont facultatives. Enregistrez la séance pour l’ajouter à l’historique et à l’export JSON. Si la date est déjà prise, ouvrez la séance existante pour la corriger.
+
 L’onglet **Statistique** affiche :
 
 - Une courbe du nombre de présents pour chaque jour enregistré, avec un point par séance.
+- La moyenne des présents par jour de la semaine et le nombre de séances pris en compte.
 - Un tableau de classement des joueurs, du plus au moins présent, avec le rang et le nombre total de participations. Les égalités sont départagées par nom. Les joueurs actuels sans présence sont affichés à zéro ; les anciens participants restent visibles même s’ils ont quitté l’effectif. Les noms courants sont utilisés pour les joueurs de l’effectif, et les derniers noms enregistrés pour les autres. L’identité est suivie par identifiant de joueur, pas par nom.
 - Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
 
-Les corrections portent uniquement sur l’historique. Elles ne modifient pas l’effectif, les présences ou les compositions en cours. Les copies de profils sont conservées pour permettre de futurs suivis de complémentarité ; cette première version présente les deux statistiques de présence demandées.
+Le classement ajoute un pourcentage pour chaque jour affiché. Par exemple, trois participations sur quatre séances du mercredi donnent 75 %. La moyenne et les pourcentages affichent un tiret pour les jours sans séance. Les sept jours sont affichés par défaut. La sélection se fait dans **Configuration** et s’enregistre dans le navigateur.
+
+Les corrections portent sur l’historique des séances. L’effectif, la sélection des présents et les compositions en cours se gèrent dans les onglets **Effectif** et **Entraînement**.
 
 ### Sauvegarde et compatibilité
 

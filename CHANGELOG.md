@@ -7,6 +7,8 @@
 - **Match**, réservé à une future évolution.
 - **Statistique** pour les présences, les coéquipiers fréquents et le suivi des séances.
 - **Configuration** pour le fournisseur, le modèle et la clé de l’IA. La génération IA se lance depuis Entraînement.
+- Création manuelle de séances dans **Statistique**, avec une date, des présents et des équipes facultatives.
+- Moyennes de présence par jour de la semaine et pourcentages par joueur. Les jours affichés se choisissent dans **Configuration**.
 
 ## 2.1 — 19 novembre 2026
 

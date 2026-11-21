@@ -10,6 +10,12 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .ranking-wrap{max-height:480px}.ranking-wrap caption{text-align:left;font-weight:600;padding:8px 0}#historyPanel .ranking-wrap th:nth-child(2){white-space:normal;overflow-wrap:anywhere}
 .teammate-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.teammate-controls>div{flex:1;min-width:180px}.teammate-controls select{width:100%}.teammate-graph{overflow:auto;margin:16px 0;border-radius:12px;background:#f7fcff}.teammate-graph svg{display:block;margin:auto;max-width:none}.teammate-graph text{font-family:inherit;pointer-events:none}.teammate-node:focus circle{stroke:#102d46;stroke-width:3}.teammate-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#547087}.teammate-legend span{display:inline-flex;align-items:center;gap:7px}.teammate-legend i{display:inline-block;background:#087eaf;border-radius:50%;width:12px;height:12px}.teammate-legend span:last-child i{width:23px;height:23px}.teammate-table th:nth-child(1){white-space:normal!important;overflow-wrap:anywhere}
 .configuration-card{max-width:660px}
+.configuration-card + .configuration-card{margin-top:19px}
+.weekday-preferences{border:0;padding:0;margin:0;min-width:0}
+.weekday-preferences legend{color:#075a80;font-size:18px;font-weight:700}
+.weekday-options{display:flex;flex-wrap:wrap;gap:8px 16px}
+.weekday-options label{display:flex;align-items:center;gap:6px;margin:0;min-height:36px;cursor:pointer}
+#historyStatus:not(:empty){margin:12px 0}
 .attendance-player{margin:0;cursor:pointer;color:inherit}
 .attendance-player .name{display:block}
 .attendance-player input{flex-shrink:0}
@@ -42,14 +48,31 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 <section id="matchPanel" role="tabpanel" aria-labelledby="matchTab" hidden></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="historyTab" hidden>
  <div class="grid history-grid">
-  <section class="panel full"><div class="summary"><div><h2>Statistique</h2><p class="muted">Les statistiques utilisent les séances enregistrées avec « Save ». Une participation est comptée une fois par joueur et par jour.</p></div><span class="pill" id="sessionCount">0 séance</span></div><div id="historyStatus" role="status" aria-live="polite"></div></section>
+  <section class="panel full"><div class="summary"><div><h2>Statistique</h2><p class="muted">Les statistiques utilisent les séances enregistrées depuis Entraînement ou saisies manuellement. Une participation est comptée une fois par joueur et par jour.</p></div><span class="pill" id="sessionCount">0 séance</span></div></section>
   <section class="panel"><h2>Présences par jour</h2><div id="attendanceChart" class="history-chart"></div><details><summary>Données des présences</summary><div id="attendanceData" class="history-table-wrap"></div></details></section>
-  <section class="panel"><h2>Classement des présences</h2><p class="muted">Nombre total de participations enregistrées, du plus au moins présent. À égalité, les joueurs sont classés par nom.</p><div id="participationData" class="history-table-wrap ranking-wrap"></div></section>
+  <section class="panel"><h2>Présence moyenne par jour de la semaine</h2><div id="weekdayAttendance" class="history-table-wrap"></div></section>
+  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Classement par nombre total de participations. Pour chaque jour affiché, le pourcentage est calculé sur les séances enregistrées ce jour de la semaine.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
   <section class="panel full"><h2>Coéquipiers les plus fréquents</h2><p class="muted">Le joueur de référence est au centre. Plus le cercle est grand et foncé, plus ce coéquipier a joué avec lui dans la même équipe. Chaque duo est compté une seule fois par séance enregistrée ; les adversaires et les joueurs non affectés sont exclus.</p><div class="teammate-controls"><div><label for="teammateReference">Joueur de référence</label><select id="teammateReference"><option value="">Choisir un joueur</option></select></div><div><label for="teammateLimit">Coéquipiers à afficher</label><select id="teammateLimit"><option value="8">Les 8 plus fréquents</option><option value="16">Les 16 plus fréquents</option><option value="all">Tous</option></select></div></div><p id="teammateSummary" class="muted" role="status"></p><div id="teammateGraph" class="teammate-graph"></div><div class="teammate-legend"><span><i aria-hidden="true"></i>Moins souvent ensemble</span><span><i aria-hidden="true"></i>Plus souvent ensemble</span></div><details><summary>Liste complète des coéquipiers</summary><div id="teammateData" class="history-table-wrap"></div></details></section>
-  <section class="panel full"><h2>Modifier une séance</h2><label for="historyDay">Jour enregistré</label><select id="historyDay"><option value="">Aucune séance</option></select><p class="muted">Les modifications concernent cette séance uniquement. Elles ne changent pas l’effectif ni les équipes du Team Maker. Après correction, cliquez sur « Enregistrer les modifications ».</p><div id="sessionEditor"></div></section>
+  <section class="panel full">
+   <h2>Gérer les séances</h2>
+   <div class="history-actions">
+    <div><label for="historyDay">Jour enregistré</label><select id="historyDay"><option value="">Aucune séance</option></select></div>
+    <button id="newManualSession" class="outline">Créer une séance manuellement</button>
+   </div>
+   <div id="historyStatus" role="status" aria-live="polite"></div>
+   <div id="sessionEditor"></div>
+  </section>
  </div>
 </section>
 <section id="configPanel" role="tabpanel" aria-labelledby="configTab" hidden>
+ <section class="panel configuration-card">
+  <fieldset class="weekday-preferences" aria-describedby="weekdayHelp">
+   <legend>Jours affichés dans les statistiques</legend>
+   <p id="weekdayHelp" class="muted">Choisissez les jours à afficher dans les moyennes et le classement. Ce réglage est enregistré dans ce navigateur.</p>
+   <div id="weekdayOptions" class="weekday-options"></div>
+  </fieldset>
+  <p id="weekdayStatus" class="muted" role="status" hidden></p>
+ </section>
  <section class="panel configuration-card"><h2>Option intelligence artificielle</h2><div class="fields"><div><label for="provider">Fournisseur</label><select id="provider" style="width:100%"><option value="openai">OpenAI / ChatGPT</option><option value="anthropic">Anthropic / Claude</option></select></div><div><label for="model">Modèle API</label><input id="model" style="width:100%" value="gpt-4.1-mini"></div><div class="field-wide"><label for="apiKey">Clé API (session uniquement)</label><input id="apiKey" type="password" placeholder="Saisir votre clé API" autocomplete="off" style="width:100%"></div></div><p class="muted">La clé reste temporairement dans cet onglet et est transmise directement au fournisseur choisi depuis votre navigateur. Ne publiez jamais ce fichier avec une clé préremplie. Les noms et profils des présents sont envoyés au fournisseur lors d'une demande IA. Sans clé, l'équilibrage local fonctionne normalement.</p></section>
 </section>
 <footer>Les données joueurs sont conservées uniquement dans le stockage local de ce navigateur. Pensez à exporter régulièrement votre effectif en JSON. Aucune clé API n'est enregistrée.</footer></div><script>
@@ -368,11 +391,33 @@ render();</script><script>
 // History is independent of the Team Maker and its calculation engines.
 const historyStore=(()=>{
  const KEY='basket-sessions-v2';
+ const WEEKDAY_KEY='basket-statistics-weekdays';
+ const WEEKDAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+ const averageFormat=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
+ const rateFormat=new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:1});
  let sessions=[],draft=null,blocked=false;
  const clone=value=>JSON.parse(JSON.stringify(value));
  const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('fr-FR');
  function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
  function validDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value}
+ function readWeekdayOptions(){
+  try{
+   const saved=JSON.parse(localStorage.getItem(WEEKDAY_KEY));
+   if(Array.isArray(saved))return WEEKDAYS.map((_,day)=>day).filter(day=>saved.includes(day));
+  }catch{}
+  return WEEKDAYS.map((_,day)=>day);
+ }
+ let displayedDays=readWeekdayOptions();
+ $('weekdayOptions').innerHTML=WEEKDAYS.map((name,day)=>`<label><input type="checkbox" value="${day}" ${displayedDays.includes(day)?'checked':''}>${name}</label>`).join('');
+ $('weekdayOptions').addEventListener('change',()=>{
+  displayedDays=[...$('weekdayOptions').querySelectorAll('input:checked')].map(input=>Number(input.value));
+  $('weekdayStatus').hidden=true;
+  try{localStorage.setItem(WEEKDAY_KEY,JSON.stringify(displayedDays))}catch{
+   $('weekdayStatus').textContent='Le réglage s’applique à cette page. Le navigateur n’a pas pu l’enregistrer.';
+   $('weekdayStatus').hidden=false;
+  }
+  renderCharts();
+ });
  function snapshot(p){
   if(!p||typeof p.id!=='string'||!p.id||typeof p.name!=='string'||!p.name.trim()||!Number.isFinite(p.height)||!Number.isFinite(p.level))throw Error('Profil de joueur invalide dans une séance.');
   return {id:p.id,name:p.name.trim(),height:p.height,level:p.level,gender:normalizeGender(p.gender),teamwork:normalizeTeamwork(p.teamwork),...normalizePlayerPositions(p),skills:Object.fromEntries(SKILLS.map(([k])=>[k,Math.max(1,Math.min(5,Number(p.skills?.[k])||3))])),present:true};
@@ -405,9 +450,9 @@ const historyStore=(()=>{
  }
  function status(message){$('historyStatus').textContent=message}
  try{const stored=localStorage.getItem(KEY);sessions=stored?normalize(JSON.parse(stored)):[]}catch(error){blocked=true;status('Historique illisible : '+error.message+' Importez une sauvegarde valide avant de le modifier. Les données stockées sont conservées.')}
- function commit(next,message){
+ function commit(next,message,selectedId){
   if(blocked)throw Error('Importez une sauvegarde valide pour restaurer l’historique.');
-  const checked=normalize(next);localStorage.setItem(KEY,JSON.stringify(checked));sessions=checked;refresh();status(message);
+  const checked=normalize(next);localStorage.setItem(KEY,JSON.stringify(checked));sessions=checked;refresh(selectedId);status(message);
  }
  function importData(nextPlayers,nextSessions){
   const checked=nextSessions===undefined?sessions:normalize(nextSessions);
@@ -430,8 +475,8 @@ const historyStore=(()=>{
    const date=today(),existing=sessions.find(s=>s.date===date);
    if(existing&&!confirm('Une séance existe le '+dateLabel(date)+'. Remplacer ses présences et ses équipes par la composition actuelle ?'))return;
    const session={id:existing?.id||crypto.randomUUID(),date,savedAt:new Date().toISOString(),players:present.map(snapshot),teams:lastResult.teams.map((ids,i)=>({id:crypto.randomUUID(),name:'Équipe '+(i+1),color:teamColors[i],playerIds:ids.slice()})),bench:lastResult.bench.slice(),source:lastResult.source,engineVersion:lastResult.engineVersion||null,manuallyEdited:lastResult.manuallyEdited===true};
-   commit([...sessions.filter(s=>s.date!==date),session],'Séance du '+dateLabel(date)+' enregistrée.');
-   $('historyDay').value=session.id;selectDay();$('notice').textContent='Séance du '+dateLabel(date)+' enregistrée dans l’onglet Statistique.';
+   commit([...sessions.filter(s=>s.date!==date),session],'Séance du '+dateLabel(date)+' enregistrée.',session.id);
+   $('notice').textContent='Séance du '+dateLabel(date)+' enregistrée dans l’onglet Statistique.';
   }catch(error){$('notice').textContent='Enregistrement impossible : '+error.message}
  }
  const tabs=[...$('mainTabs').querySelectorAll('[role="tab"]')];
@@ -442,7 +487,10 @@ const historyStore=(()=>{
    item.tabIndex=active?0:-1;
    $(item.getAttribute('aria-controls')).hidden=!active;
   }
-  if(tab.id==='historyTab')refresh();
+  if(tab.id==='historyTab'){
+   if(isNewSession()){renderCharts();renderEditor()}
+   else refresh();
+  }
  }
  tabs.forEach(tab=>tab.addEventListener('click',()=>openTab(tab)));
  $('mainTabs').addEventListener('keydown',event=>{
@@ -464,7 +512,7 @@ const historyStore=(()=>{
  new MutationObserver(()=>$('saveSessionBtn').disabled=$('copyBtn').disabled).observe($('copyBtn'),{attributes:true,attributeFilter:['disabled']});
  function graph(container,values,labels){
   const yMax=Math.max(0,...values),description='Nombre de joueurs présents par jour enregistré';
-  if(!labels.length){$(container).innerHTML='<p class="history-empty">Aucune séance enregistrée. Composez des équipes puis cliquez sur « Save ».</p>';return}
+  if(!labels.length){$(container).innerHTML='<p class="history-empty">Aucune séance enregistrée. Créez-en une dans « Gérer les séances » ou enregistrez une composition depuis Entraînement.</p>';return}
   const width=Math.max(300,Math.min(720,$(container).clientWidth||720)),height=280,left=48,right=20,top=22,bottom=55,max=Math.max(1,yMax),plotWidth=width-left-right,plotHeight=height-top-bottom;
   const x=i=>labels.length===1?left+plotWidth/2:left+i*plotWidth/(labels.length-1),y=n=>height-bottom-n/max*plotHeight;
   let content='';
@@ -509,39 +557,94 @@ const historyStore=(()=>{
  }
  $('teammateReference').onchange=renderCharts;
  $('teammateLimit').onchange=renderCharts;
+ function renderAttendanceTables(participants,totals){
+  $('weekdayAttendance').innerHTML=displayedDays.length?`<table><thead><tr><th scope="col">Jour</th><th scope="col">Séances</th><th scope="col">Moyenne des présents</th></tr></thead><tbody>${displayedDays.map(day=>{
+   const {sessions,players}=totals[day];
+   return `<tr><th scope="row">${WEEKDAYS[day]}</th><td>${sessions}</td><td>${sessions?averageFormat.format(players/sessions):'—'}</td></tr>`;
+  }).join('')}</tbody></table>`:'<p class="muted">Choisissez les jours à afficher dans Configuration.</p>';
+
+  const ranking=[...participants.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
+  const dayHeaders=displayedDays.map(day=>`<th scope="col">${WEEKDAYS[day]} (%)</th>`).join('');
+  const rows=ranking.map((p,i)=>{
+   const rates=displayedDays.map(day=>{
+    const total=totals[day].sessions;
+    if(!total)return '<td>—</td>';
+    const present=p.byDay[day];
+    return `<td title="${present} sur ${total} séances">${rateFormat.format(present/total)}</td>`;
+   }).join('');
+   return `<tr data-ranking-player="${escapeHtml(p.id)}"><td>${i+1}</td><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td>${rates}</tr>`;
+  });
+  $('participationData').innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th><th scope="col">Participations</th>${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
+ }
  function renderCharts(){
   const dates=sessions.map(s=>s.date),counts=sessions.map(s=>s.players.length);
   graph('attendanceChart',counts,dates);
   $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th>Jour</th><th>Présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune donnée.</p>';
   const participants=new Map();
-  sessions.forEach(session=>session.players.forEach(p=>{
-   const previous=participants.get(p.id);participants.set(p.id,{id:p.id,name:p.name,count:(previous?.count||0)+1});
-  }));
-  players.forEach(p=>participants.set(p.id,{id:p.id,name:p.name,count:participants.get(p.id)?.count||0}));
-  const ranking=[...participants.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
-  $('participationData').innerHTML=ranking.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th><th scope="col">Participations</th></tr></thead><tbody>${ranking.map((p,i)=>`<tr data-ranking-player="${escapeHtml(p.id)}"><td>${i+1}</td><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td></tr>`).join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
+  const totals=WEEKDAYS.map(()=>({sessions:0,players:0}));
+  function participant(p){
+   if(!participants.has(p.id))participants.set(p.id,{id:p.id,name:p.name,count:0,byDay:WEEKDAYS.map(()=>0)});
+   const entry=participants.get(p.id);
+   entry.name=p.name;
+   return entry;
+  }
+  for(const session of sessions){
+   const day=(new Date(session.date+'T00:00:00Z').getUTCDay()+6)%7;
+   totals[day].sessions++;
+   totals[day].players+=session.players.length;
+   for(const player of session.players){
+    const entry=participant(player);
+    entry.count++;
+    entry.byDay[day]++;
+   }
+  }
+  players.forEach(participant);
+  renderAttendanceTables(participants,totals);
   renderTeammates(participants);
   $('sessionCount').textContent=sessions.length+' séance'+(sessions.length>1?'s':'');
  }
  window.addEventListener('resize',()=>{if(!$('historyPanel').hidden)renderCharts()});
- function refresh(){
-  renderCharts();const selected=$('historyDay').value;
+ function refresh(selected=$('historyDay').value){
+  renderCharts();
   $('historyDay').innerHTML=sessions.length?sessions.slice().reverse().map(s=>`<option value="${escapeHtml(s.id)}">${dateLabel(s.date)} · ${s.players.length} présents</option>`).join(''):'<option value="">Aucune séance</option>';
   if(sessions.some(s=>s.id===selected))$('historyDay').value=selected;
   selectDay();
  }
+ function isNewSession(){return draft!==null&&!sessions.some(session=>session.id===draft.id)}
  function selectDay(){draft=clone(sessions.find(s=>s.id===$('historyDay').value)||null);renderEditor()}
- $('historyDay').onchange=selectDay;
+ $('historyDay').onchange=()=>{status('');selectDay()};
+ $('newManualSession').onclick=()=>{
+  draft={id:crypto.randomUUID(),date:today(),players:[],teams:[],bench:[],source:'manual',engineVersion:null,manuallyEdited:true};
+  status('');renderEditor();$('sessionDate').focus();
+ };
+ function saveHistoryDraft(){
+  const creating=isNewSession(),session=clone(draft);
+  try{
+   if(!validDate(session.date))throw Error('Choisissez une date valide.');
+   if(creating){
+    if(sessions.some(saved=>saved.date===session.date))throw Error('Une séance existe déjà à cette date. Annulez la création pour modifier la séance enregistrée.');
+    session.savedAt=new Date().toISOString();
+    commit([...sessions,session],'Séance du '+dateLabel(session.date)+' créée.',session.id);
+   }else{
+    commit(sessions.map(saved=>saved.id===session.id?session:saved),'Séance mise à jour. Les statistiques ont été recalculées.',session.id);
+   }
+   $('historyDay').focus();
+  }catch(error){status((creating?'Création impossible : ':'Modification impossible : ')+error.message)}
+ }
  function assign(id,teamId){
   draft.teams.forEach(team=>team.playerIds=team.playerIds.filter(p=>p!==id));draft.bench=draft.bench.filter(p=>p!==id);
   const team=draft.teams.find(team=>team.id===teamId);if(team)team.playerIds.push(id);else draft.bench.push(id);
  }
  function renderEditor(){
-  if(!draft){$('sessionEditor').innerHTML='<p class="history-empty">Sélectionnez un jour après votre premier enregistrement.</p>';return}
+  const creating=isNewSession();
+  $('historyDay').disabled=creating||sessions.length===0;
+  $('newManualSession').disabled=creating;
+  if(!draft){$('sessionEditor').innerHTML='<p class="history-empty">Créez une séance pour commencer à suivre les présences.</p>';return}
   const teamOptions=id=>'<option value="">Non affecté</option>'+draft.teams.map(team=>`<option value="${escapeHtml(team.id)}" ${team.playerIds.includes(id)?'selected':''}>${escapeHtml(team.name)}</option>`).join('');
   const available=players.filter(p=>!draft.players.some(recorded=>recorded.id===p.id));
   $('sessionEditor').innerHTML=`
-   <div class="history-actions"><div><label for="sessionDate">Date de la séance</label><input id="sessionDate" type="date" value="${draft.date}"></div><button id="saveHistoryEdits" class="primary">Enregistrer les modifications</button><button id="deleteSession" class="danger">Supprimer la séance</button></div>
+   ${creating?'<h3>Nouvelle séance</h3><p class="muted">Choisissez la date, puis ajoutez les joueurs présents. Les équipes sont facultatives.</p>':''}
+   <div class="history-actions"><div><label for="sessionDate">Date de la séance</label><input id="sessionDate" type="date" value="${draft.date}"></div><button id="saveHistoryEdits" class="primary">${creating?'Enregistrer la séance':'Enregistrer les modifications'}</button>${creating?'<button id="cancelManualSession" class="outline">Annuler</button>':'<button id="deleteSession" class="danger">Supprimer la séance</button>'}</div>
    <h3>Équipes enregistrées</h3><p class="muted">Supprimer une équipe garde ses joueurs comme présents, mais non affectés.</p>
    <div class="history-team-list">${draft.teams.map(team=>`<div class="history-team-edit" data-history-team="${escapeHtml(team.id)}"><label>Nom de l’équipe<input class="history-team-name" maxlength="80" value="${escapeHtml(team.name)}"></label><label>Couleur<input class="history-team-color" type="color" value="${team.color}"></label><span class="muted">${team.playerIds.length} joueurs</span><button class="danger history-delete-team">Supprimer l’équipe</button></div>`).join('')}</div>
    <button id="addHistoryTeam" class="outline">Ajouter une équipe</button><div class="divider"></div>
@@ -562,8 +665,12 @@ const historyStore=(()=>{
   });
   $('addHistoryTeam').onclick=()=>{draft.teams.push({id:crypto.randomUUID(),name:'Équipe '+(draft.teams.length+1),color:TEAM_PALETTE[draft.teams.length%TEAM_PALETTE.length][1],playerIds:[]});renderEditor()};
   $('addHistoryPlayer').onclick=()=>{const p=players.find(p=>p.id===$('historyAddPlayer').value);if(p&&!draft.players.some(recorded=>recorded.id===p.id)){draft.players.push(snapshot(p));draft.bench.push(p.id);renderEditor()}};
-  $('saveHistoryEdits').onclick=()=>{try{const id=draft.id;commit(sessions.map(s=>s.id===id?clone(draft):s),'Séance mise à jour. Les graphiques ont été recalculés.');$('historyDay').value=id;selectDay()}catch(error){status('Modification impossible : '+error.message)}};
-  $('deleteSession').onclick=()=>{if(confirm('Supprimer définitivement la séance du '+dateLabel(draft.date)+' ?')){try{commit(sessions.filter(s=>s.id!==draft.id),'Séance supprimée. Les graphiques ont été recalculés.')}catch(error){status('Suppression impossible : '+error.message)}}};
+  $('saveHistoryEdits').onclick=saveHistoryDraft;
+  if(creating){
+   $('cancelManualSession').onclick=()=>{status('');selectDay();$('newManualSession').focus()};
+  }else{
+   $('deleteSession').onclick=()=>{if(confirm('Supprimer définitivement la séance du '+dateLabel(draft.date)+' ?')){try{commit(sessions.filter(s=>s.id!==draft.id),'Séance supprimée. Les statistiques ont été recalculées.')}catch(error){status('Suppression impossible : '+error.message)}}};
+  }
  }
  refresh();
  return Object.freeze({exportSessions:()=>clone(sessions),readImport:value=>value&&Object.hasOwn(value,'sessions')?normalize(value.sessions):undefined,importData});

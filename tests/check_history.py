@@ -89,7 +89,7 @@ try:
   assert page.locator('#participationChart').count()==0
   assert page.locator('#participationData table').is_visible()
   assert page.locator('#participationData tbody tr').count()==6
-  assert page.locator('#participationData tbody tr').last.locator('td').last.text_content()=='0'
+  assert page.locator('#participationData tbody tr').last.locator('td:nth-child(3)').text_content()=='0'
   assert page.locator('#attendanceData td').all_text_contents()==['20/11/2026','4']
   # Second day includes all six: the ranking sorts descending and resolves ties alphabetically.
   training();page.clock.set_fixed_time(datetime(2026,11,21,10,tzinfo=timezone.utc))
@@ -102,7 +102,7 @@ try:
   assert len(records())==2
   assert page.locator('#attendanceData tbody tr').nth(1).locator('td').all_text_contents()==['21/11/2026','6']
   assert page.locator('#participationData tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.rankingPlayer)')==['p0','p1','p2','p3','p4','p5']
-  assert page.locator('#participationData tbody tr td:last-child').all_text_contents()==['2','2','2','2','1','1']
+  assert page.locator('#participationData tbody tr td:nth-child(3)').all_text_contents()==['2','2','2','2','1','1']
   # Edit an old day without touching the current roster/results.
   current_roster=page.evaluate('JSON.stringify(players)')
   current_result=page.evaluate('JSON.stringify(lastResult)')
@@ -117,7 +117,7 @@ try:
   assert len(first['players'])==3 and first['teams'][0]['name']=='Les Bleus'
   assert next(p for p in first['players'] if p['id']=='p0')['name']=='Nom historique'
   assert page.locator('#attendanceData tbody tr').first.locator('td').all_text_contents()==['20/11/2026','3']
-  assert page.locator('[data-ranking-player="p1"] td').last.text_content()=='1'
+  assert page.locator('[data-ranking-player="p1"] td:nth-child(3)').text_content()=='1'
   assert page.locator('#participationData tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.rankingPlayer)')==['p0','p2','p3','p1','p4','p5']
   # Remove a team: participants remain present and become unassigned.
   page.locator('.history-delete-team').first.click();page.locator('#saveHistoryEdits').click()
@@ -174,7 +174,7 @@ try:
   page.once('dialog',lambda d:d.accept());page.locator('#deleteSession').click()
   assert len(records())==1
   assert page.locator('#attendanceData tbody tr').count()==1
-  assert page.locator('#participationData tbody tr td:last-child').all_text_contents()==['1']*6
+  assert page.locator('#participationData tbody tr td:nth-child(3)').all_text_contents()==['1']*6
   for width in [1280,390]:
    page.set_viewport_size(dict(width=width,height=960))
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
@@ -184,6 +184,41 @@ try:
   upload(empty)
   assert records()==[] and page.locator('#attendanceChart svg').count()==0
   assert 'Aucune séance' in page.locator('#attendanceChart').inner_text()
+  # A manual session adds to the same history and changes both weekday tables.
+  wednesdays=[dict(date=date,players=present,teams=[]) for date,present in [
+   ('2026-11-04', [roster[0],roster[2]]), ('2026-11-11', [roster[0]]),
+   ('2026-11-18', [roster[0],roster[2]])
+  ]]
+  upload(dict(players=roster,sessions=wednesdays))
+  page.locator('#newManualSession').click()
+  page.locator('#sessionDate').fill('2026-11-18')
+  page.locator('#saveHistoryEdits').click()
+  assert len(records())==3 and 'existe déjà' in page.locator('#historyStatus').inner_text()
+  page.locator('#sessionDate').fill('2026-11-25')
+  page.locator('#historyAddPlayer').select_option('p1')
+  page.locator('#addHistoryPlayer').click()
+  page.locator('#configTab').click()
+  for day in ['Lundi','Mardi','Jeudi','Vendredi','Samedi']:
+   page.get_by_role('checkbox',name=day,exact=True).uncheck()
+  history()
+  assert page.locator('#sessionDate').input_value()=='2026-11-25'
+  page.locator('#saveHistoryEdits').click()
+  manual=records()[-1]
+  assert manual['date']=='2026-11-25' and manual['source']=='manual'
+  assert manual['teams']==[] and manual['bench']==['p1']
+  assert page.locator('#historyDay').input_value()==manual['id']
+  assert page.locator('#weekdayAttendance tbody tr').evaluate_all('(rows)=>rows.map(row=>Array.from(row.cells,cell=>cell.textContent))')==[['Mercredi','4','1,5'],['Dimanche','0','—']]
+  assert page.locator('#participationData thead th').all_text_contents()==['Rang','Joueur','Participations','Mercredi (%)','Dimanche (%)']
+  assert page.locator('[data-ranking-player="p0"] td[title="3 sur 4 séances"]').inner_text().replace('\xa0',' ')=='75 %'
+  assert page.locator('[data-ranking-player="p3"] td[title="0 sur 4 séances"]').inner_text().replace('\xa0',' ')=='0 %'
+  assert page.locator('[data-ranking-player="p0"] td:last-child').text_content()=='—'
+  assert export()['sessions'][-1]==manual
+  page.locator('#newManualSession').click()
+  page.locator('#cancelManualSession').click()
+  assert len(records())==4 and page.locator('#historyDay').input_value()==manual['id']
+  page.reload();history()
+  assert page.locator('#weekdayAttendance tbody th').all_text_contents()==['Mercredi','Dimanche']
+  assert page.locator('[data-ranking-player="p0"] td[title="3 sur 4 séances"]').count()==1
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

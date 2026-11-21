@@ -210,6 +210,7 @@ try:
   assert page.locator('#historyDay').input_value()==manual['id']
   assert page.locator('#weekdayAttendance tbody tr').evaluate_all('(rows)=>rows.map(row=>Array.from(row.cells,cell=>cell.textContent))')==[['Mercredi','4','1,5'],['Dimanche','0','—']]
   assert page.locator('#participationData thead th').all_text_contents()==['Rang','Joueur','Participations','Mercredi (%)','Dimanche (%)']
+  assert page.get_by_role('button',name='Dimanche (%)',exact=True).is_disabled()
   assert page.locator('[data-ranking-player="p0"] td[title="3 sur 4 séances"]').inner_text().replace('\xa0',' ')=='75 %'
   assert page.locator('[data-ranking-player="p3"] td[title="0 sur 4 séances"]').inner_text().replace('\xa0',' ')=='0 %'
   assert page.locator('[data-ranking-player="p0"] td:last-child').text_content()=='—'
@@ -224,7 +225,8 @@ try:
   # The same alphabetical order applies across lists, regardless of the roster's selected sort.
   unordered=[dict(player,name=name) for player,name in zip(roster,['Zoé','émile','André'])]
   dates=['2026-10-30','2026-10-31','2026-11-02','2026-11-06','2026-11-09']
-  upload(dict(players=unordered,sessions=[dict(date=date,players=unordered[:1],teams=[]) for date in dates],statisticsWeekdays=[4,0,5,4]))
+  groups=[[0],[0,2],[1,2],[0],[1]]
+  upload(dict(players=unordered,sessions=[dict(date=date,players=[unordered[i] for i in group],teams=[]) for date,group in zip(dates,groups)],statisticsWeekdays=[4,0,5,4]))
   page.locator('#rosterTab').click()
   alphabetical=['André','émile','Zoé']
   assert page.locator('#rosterSort').input_value()=='name'
@@ -237,6 +239,23 @@ try:
   page.locator('#newManualSession').click()
   assert page.locator('#historyAddPlayer option').all_text_contents()[1:]==alphabetical
   page.locator('#cancelManualSession').click()
+  # Ranking controls sort the correct numeric column, toggle direction and keep keyboard focus.
+  ranking=page.locator('#participationData')
+  def ranking_ids():return ranking.locator('tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.rankingPlayer)')
+  active_sort=ranking.locator('thead th[aria-sort]')
+  assert ranking_ids()==['p0','p2','p1'] and active_sort.inner_text()=='Participations'
+  monday=ranking.get_by_role('button',name='Lundi (%)',exact=True)
+  monday.click()
+  assert ranking_ids()==['p1','p2','p0'] and active_sort.get_attribute('aria-sort')=='descending'
+  assert monday.evaluate('button=>document.activeElement===button')
+  monday.press('Enter')
+  assert ranking_ids()==['p0','p2','p1'] and active_sort.get_attribute('aria-sort')=='ascending'
+  total=ranking.get_by_role('button',name='Participations',exact=True)
+  total.click();total.click()
+  assert ranking_ids()==['p2','p1','p0'] and active_sort.inner_text()=='Participations'
+  assert ranking.locator('tbody td:first-child').all_text_contents()==['1','2','3']
+  ranking.get_by_role('button',name='Samedi (%)',exact=True).click()
+  assert ranking_ids()==['p2','p0','p1'] and active_sort.inner_text()=='Samedi (%)'
   # Marker colours follow weekdays and calendar lines fall between the right dates.
   chart=page.locator('#attendanceChart')
   points=chart.locator('circle').evaluate_all('(points)=>points.map(p=>({x:Number(p.getAttribute("cx")),color:p.getAttribute("fill")})).sort((a,b)=>a.x-b.x)')
@@ -267,6 +286,7 @@ try:
   upload(unordered) # Old player-only exports retain the current weekday selection.
   history()
   assert chart.locator('[data-legend-weekday]').all_text_contents()==['Lundi','Vendredi']
+  assert ranking_ids()==['p0','p2','p1'] and active_sort.inner_text()=='Participations'
   assert chart.locator('circle').count()==4 and chart.locator('polyline').count()==2
   assert page.locator('#attendanceData tbody tr').count()==4
   upload(weekday_backup)

@@ -8,6 +8,11 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .teamwork-scale{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#547087;margin-top:7px}.teamwork-scale span{flex:1}.teamwork-scale span:nth-child(2){text-align:center}.teamwork-scale span:last-child{text-align:right}
 [hidden]{display:none!important}.main-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}.main-tabs button{background:white;color:#234e68;border:1px solid #bfdcea}.main-tabs button[aria-selected=true]{background:#087eaf;color:white;border-color:#087eaf}.history-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.history-chart{min-height:120px;overflow:hidden}.history-chart svg{display:block;width:100%;height:auto}.history-chart text{font:12px system-ui;fill:#547087}.history-empty{background:#f0f8fc;border-radius:10px;padding:22px;color:#547087;line-height:1.6}.chart-legend{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:10px;font-size:12px}.chart-legend li{display:flex;align-items:center;gap:6px;overflow-wrap:anywhere}.chart-legend span{width:12px;height:12px;border-radius:50%;flex-shrink:0}.history-table-wrap{overflow:auto;max-height:320px}#historyPanel table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}#historyPanel th,#historyPanel td{text-align:left;padding:9px;border-bottom:1px solid #d7eaf4;white-space:nowrap}#historyPanel details{margin-top:12px}#historyPanel summary{cursor:pointer;font-size:13px;color:#075a80}#historyStatus{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}#historyPanel select{max-width:100%}.history-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:15px 0 20px}.history-player-list,.history-team-list{display:grid;gap:10px;margin:12px 0}.history-player-edit,.history-team-edit{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:#f7fcff;border:1px solid #dfedf5;border-radius:10px;padding:12px}.history-player-edit label,.history-team-edit label{flex:1;min-width:130px;margin:0}.history-player-edit input,.history-player-edit select,.history-team-edit input:not([type=color]){display:block;width:100%;margin-top:6px}.history-team-edit input[type=color]{display:block;width:45px;height:38px;padding:4px}.history-team-edit label:has(input[type=color]){flex:0 0 auto;min-width:50px}.history-player-edit button,.history-team-edit button{font-size:12px}.results-actions{display:flex;gap:8px;flex-wrap:wrap}@media(max-width:780px){.history-grid{grid-template-columns:minmax(0,1fr)}.history-player-edit label{flex-basis:100%}.history-player-edit button{width:100%}.history-actions>div{max-width:100%}}
 .ranking-wrap{max-height:480px}.ranking-wrap caption{text-align:left;font-weight:600;padding:8px 0}#historyPanel .ranking-wrap th:nth-child(2){white-space:normal;overflow-wrap:anywhere}
+.ranking-sort{display:inline-flex;align-items:center;gap:6px;background:transparent;color:inherit;padding:4px;font:inherit;white-space:nowrap}
+.ranking-sort:not(:disabled):hover,.ranking-wrap th[aria-sort] .ranking-sort{background:#e7f4fb;color:#075a80}
+.ranking-sort [aria-hidden]::after{content:'↕'}
+.ranking-wrap th[aria-sort=ascending] .ranking-sort [aria-hidden]::after{content:'↑'}
+.ranking-wrap th[aria-sort=descending] .ranking-sort [aria-hidden]::after{content:'↓'}
 .teammate-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.teammate-controls>div{flex:1;min-width:180px}.teammate-controls select{width:100%}.teammate-graph{overflow:auto;margin:16px 0;border-radius:12px;background:#f7fcff}.teammate-graph svg{display:block;margin:auto;max-width:none}.teammate-graph text{font-family:inherit;pointer-events:none}.teammate-node:focus circle{stroke:#102d46;stroke-width:3}.teammate-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#547087}.teammate-legend span{display:inline-flex;align-items:center;gap:7px}.teammate-legend i{display:inline-block;background:#087eaf;border-radius:50%;width:12px;height:12px}.teammate-legend span:last-child i{width:23px;height:23px}.teammate-table th:nth-child(1){white-space:normal!important;overflow-wrap:anywhere}
 .configuration-card{max-width:660px}
 .configuration-card + .configuration-card{margin-top:19px}
@@ -53,7 +58,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
   <section class="panel full"><div class="summary"><div><h2>Statistique</h2><p class="muted">Les statistiques utilisent les séances enregistrées depuis Entraînement ou saisies manuellement. Une participation est comptée une fois par joueur et par jour.</p></div><span class="pill" id="sessionCount">0 séance</span></div></section>
   <section class="panel"><h2>Présences par jour</h2><div id="attendanceChart" class="history-chart"></div><details><summary>Données des présences</summary><div id="attendanceData" class="history-table-wrap"></div></details></section>
   <section class="panel"><h2>Présence moyenne par jour de la semaine</h2><div id="weekdayAttendance" class="history-table-wrap"></div></section>
-  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Classement par nombre total de participations. Pour chaque jour affiché, le pourcentage est calculé sur les séances enregistrées ce jour de la semaine.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
+  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Cliquez sur « Participations » ou sur un jour pour trier le classement. Un deuxième clic inverse l’ordre. Le pourcentage est calculé sur les séances enregistrées ce jour de la semaine.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
   <section class="panel full"><h2>Coéquipiers les plus fréquents</h2><p class="muted">Le joueur de référence est au centre. Plus le cercle est grand et foncé, plus ce coéquipier a joué avec lui dans la même équipe. Chaque duo est compté une seule fois par séance enregistrée ; les adversaires et les joueurs non affectés sont exclus.</p><div class="teammate-controls"><div><label for="teammateReference">Joueur de référence</label><select id="teammateReference"><option value="">Choisir un joueur</option></select></div><div><label for="teammateLimit">Coéquipiers à afficher</label><select id="teammateLimit"><option value="8">Les 8 plus fréquents</option><option value="16">Les 16 plus fréquents</option><option value="all">Tous</option></select></div></div><p id="teammateSummary" class="muted" role="status"></p><div id="teammateGraph" class="teammate-graph"></div><div class="teammate-legend"><span><i aria-hidden="true"></i>Moins souvent ensemble</span><span><i aria-hidden="true"></i>Plus souvent ensemble</span></div><details><summary>Liste complète des coéquipiers</summary><div id="teammateData" class="history-table-wrap"></div></details></section>
   <section class="panel full">
    <h2>Gérer les séances</h2>
@@ -431,6 +436,7 @@ const historyStore=(()=>{
  const averageFormat=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
  const rateFormat=new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:1});
  let sessions=[],draft=null,blocked=false;
+ let rankingColumn='count',rankingDirection='descending';
  const clone=value=>JSON.parse(JSON.stringify(value));
  const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('fr-FR');
  function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
@@ -674,9 +680,25 @@ const historyStore=(()=>{
    const {sessions,players}=totals[day];
    return `<tr><th scope="row">${WEEKDAYS[day]}</th><td>${sessions}</td><td>${sessions?averageFormat.format(players/sessions):'—'}</td></tr>`;
   }).join('')}</tbody></table>`:'<p class="muted">Choisissez les jours à afficher dans Configuration.</p>';
+  renderParticipationRanking(participants,totals);
+ }
 
-  const ranking=[...participants.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
-  const dayHeaders=displayedDays.map(day=>`<th scope="col">${WEEKDAYS[day]} (%)</th>`).join('');
+ function renderParticipationRanking(participants,totals){
+  const tableContainer=$('participationData');
+  const activeDay=Number(rankingColumn);
+  if(rankingColumn!=='count'&&(!displayedDays.includes(activeDay)||!totals[activeDay].sessions)){
+   rankingColumn='count';rankingDirection='descending';
+  }
+  // Every player has the same denominator for a given weekday.
+  const value=player=>rankingColumn==='count'?player.count:player.byDay[Number(rankingColumn)];
+  const direction=rankingDirection==='ascending'?1:-1;
+  const ranking=[...participants.values()].sort((a,b)=>direction*(value(a)-value(b))||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
+  const header=(column,label,enabled=true)=>{
+   const active=rankingColumn===String(column);
+   const sort=active?` aria-sort="${rankingDirection}"`:'';
+   return `<th scope="col"${sort}><button type="button" class="ranking-sort" data-ranking-sort="${column}"${enabled?'':' disabled title="Aucune séance enregistrée ce jour"'}>${label}<span aria-hidden="true"></span></button></th>`;
+  };
+  const dayHeaders=displayedDays.map(day=>header(day,`${WEEKDAYS[day]} (%)`,totals[day].sessions>0)).join('');
   const rows=ranking.map((p,i)=>{
    const rates=displayedDays.map(day=>{
     const total=totals[day].sessions;
@@ -686,7 +708,17 @@ const historyStore=(()=>{
    }).join('');
    return `<tr data-ranking-player="${escapeHtml(p.id)}"><td>${i+1}</td><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td>${rates}</tr>`;
   });
-  $('participationData').innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th><th scope="col">Participations</th>${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
+  tableContainer.innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th>${header('count','Participations')}${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
+  tableContainer.querySelectorAll('[data-ranking-sort]').forEach(button=>button.addEventListener('click',()=>{
+   const column=button.dataset.rankingSort;
+   const scrollLeft=tableContainer.scrollLeft;
+   rankingDirection=rankingColumn===column&&rankingDirection==='descending'?'ascending':'descending';
+   rankingColumn=column;
+   renderParticipationRanking(participants,totals);
+   tableContainer.scrollTop=0;
+   tableContainer.scrollLeft=scrollLeft;
+   tableContainer.querySelector(`[data-ranking-sort="${column}"]`).focus({preventScroll:true});
+  }));
  }
  function renderCharts(){
   const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));

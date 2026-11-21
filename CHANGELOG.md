@@ -9,6 +9,7 @@
 - **Configuration** pour le fournisseur, le modèle et la clé de l’IA. La génération IA se lance depuis Entraînement.
 - Création manuelle de séances dans **Statistique**, avec une date, des présents et des équipes facultatives.
 - Moyennes de présence par jour de la semaine et pourcentages par joueur. Les jours affichés se choisissent dans **Configuration**.
+- Tri croissant ou décroissant du classement par total de participations ou par taux de présence d’un jour de la semaine.
 - Couleurs par jour de la semaine dans la courbe des présences, avec des repères fins pour les semaines et les mois.
 - Courbes de présence séparées pour les jours sélectionnés, avec une légende filtrée et un choix des jours sauvegardé dans le JSON.
 - Tri alphabétique par défaut dans **Effectif** et ordre alphabétique pour les présences dans **Entraînement** et l’ajout de joueurs à une séance.

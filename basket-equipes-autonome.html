@@ -16,6 +16,8 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .weekday-options{display:flex;flex-wrap:wrap;gap:8px 16px}
 .weekday-options label{display:flex;align-items:center;gap:6px;margin:0;min-height:36px;cursor:pointer}
 #historyStatus:not(:empty){margin:12px 0}
+.attendance-divider-key{display:inline-block;width:18px;border-top:1px solid #6f879a}
+.attendance-divider-key.week{border-top-style:dotted}
 .attendance-player{margin:0;cursor:pointer;color:inherit}
 .attendance-player .name{display:block}
 .attendance-player input{flex-shrink:0}
@@ -31,7 +33,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 </nav>
 <section id="rosterPanel" role="tabpanel" aria-labelledby="rosterTab">
  <div class="grid">
-  <section class="panel"><div class="summary"><h2>Joueurs de l’équipe</h2><span class="pill" id="rosterCount"></span></div><div style="margin-bottom:13px"><label for="rosterSort">Trier l’effectif</label><select id="rosterSort" style="width:100%"><option value="original">Ordre d’ajout</option><option value="height-asc">Taille croissante</option><option value="height-desc">Taille décroissante</option><option value="level-asc">Niveau croissant</option><option value="level-desc">Niveau décroissant</option><option value="gender">Genre</option></select></div><div id="roster" class="roster"></div></section>
+  <section class="panel"><div class="summary"><h2>Joueurs de l’équipe</h2><span class="pill" id="rosterCount"></span></div><div style="margin-bottom:13px"><label for="rosterSort">Trier l’effectif</label><select id="rosterSort" style="width:100%"><option value="name" selected>Ordre alphabétique</option><option value="original">Ordre d’ajout</option><option value="height-asc">Taille croissante</option><option value="height-desc">Taille décroissante</option><option value="level-asc">Niveau croissant</option><option value="level-desc">Niveau décroissant</option><option value="gender">Genre</option></select></div><div id="roster" class="roster"></div></section>
   <section class="panel"><h2 id="editorTitle">Ajouter un joueur</h2><div class="fields"><div class="field-wide"><label for="playerName">Prénom ou nom</label><input style="width:100%" id="playerName" placeholder="Ex. Alex Martin" maxlength="70"></div><div><label for="height">Taille (cm)</label><input id="height" type="number" min="130" max="230" value="180" style="width:100%"></div><div><label for="level">Niveau global</label><select id="level" style="width:100%"><option value="1">1 · Débutant</option><option value="2">2 · Intermédiaire -</option><option value="3" selected>3 · Intermédiaire</option><option value="4">4 · Confirmé</option><option value="5">5 · Avancé</option></select></div><div class="field-wide"><label for="gender">Genre</label><select id="gender" style="width:100%"><option value="unspecified">Non renseigné</option><option value="female">Femme</option><option value="male">Homme</option><option value="other">Autre</option></select></div><div class="field-wide"><label for="primaryPosition">Poste principal</label><select id="primaryPosition" style="width:100%" aria-describedby="positionHelp"><option value="">Non renseigné</option></select></div><fieldset class="positions field-wide" aria-describedby="positionHelp"><legend>Postes secondaires (plusieurs choix)</legend><div id="positions" class="position-options"></div><p id="positionHelp" class="muted position-help">1 : meneur · 2 : arrière · 3 : ailier · 4 : ailier fort · 5 : pivot. Choisissez un poste principal ; les postes secondaires sont facultatifs.</p></fieldset><div class="field-wide"><div class="divider"></div><div class="muted" style="margin-bottom:12px">Compétences : 1 = faible · 5 = excellent</div></div><div id="skills" class="field-wide fields" style="gap:15px"></div><div class="field-wide"><div class="rangehead"><label for="teamwork">Jeu en équipe</label><output id="teamworkValue" for="teamwork">0 · Équilibré</output></div><input type="range" id="teamwork" min="-1" max="1" step="1" value="0" aria-valuetext="Équilibré" aria-describedby="teamworkHelp"><div class="teamwork-scale" id="teamworkHelp"><span>−1 · Trop perso</span><span>0 · Équilibré</span><span>1 · Trop altruiste</span></div></div></div><div class="actions"><button class="primary" id="saveBtn">Ajouter au groupe</button><button class="ghost hidden" id="cancelBtn">Annuler</button></div></section>
  </div>
 </section>
@@ -101,7 +103,16 @@ function updateSecondaryChoices(){POSITIONS.forEach(([n])=>{const input=$('posit
 function setEditorPositions(p){$('primaryPosition').value=p.primaryPosition||'';POSITIONS.forEach(([n])=>$('position_'+n).checked=(p.secondaryPositions||[]).includes(n));updateSecondaryChoices()}
 function normalizeGender(value){return Object.hasOwn(GENDERS,value)?value:'unspecified'}
 function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));return Array.isArray(saved)?saved.map(p=>({...p,gender:normalizeGender(p.gender),teamwork:normalizeTeamwork(p.teamwork),...normalizePlayerPositions(p)})):[]}catch{return []}}
-function sortedPlayers(){const sort=$('rosterSort').value;const list=players.slice();if(sort==='gender')return list.sort((a,b)=>GENDERS[a.gender].localeCompare(GENDERS[b.gender],'fr'));if(sort!=='original'){const [key,direction]=sort.split('-');list.sort((a,b)=>(a[key]-b[key])*(direction==='desc'?-1:1))}return list}
+const playerNameOrder=new Intl.Collator('fr',{sensitivity:'base',numeric:true});
+function comparePlayerNames(a,b){return playerNameOrder.compare(a.name,b.name)}
+function sortedPlayers(sort){
+ const list=players.slice();
+ if(sort==='name')return list.sort(comparePlayerNames);
+ if(sort==='gender')return list.sort((a,b)=>GENDERS[a.gender].localeCompare(GENDERS[b.gender],'fr'));
+ if(sort==='original')return list;
+ const [key,direction]=sort.split('-');
+ return list.sort((a,b)=>(a[key]-b[key])*(direction==='desc'?-1:1));
+}
 $('rosterSort').onchange=()=>render();function persist(){localStorage.setItem(STORAGE,JSON.stringify(players))}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $('primaryPosition').innerHTML+=POSITIONS.map(([n,label])=>`<option value="${n}">${n} · ${label}</option>`).join('');
 $('primaryPosition').onchange=updateSecondaryChoices;
@@ -109,7 +120,7 @@ $('teamwork').oninput=e=>setEditorTeamwork(e.target.value);
 $('positions').innerHTML=POSITIONS.map(([n,label])=>`<label title="${label}"><input type="checkbox" id="position_${n}" aria-label="Poste secondaire ${n} : ${label}">${n}</label>`).join('');
 $('skills').innerHTML=SKILLS.map(([key,name])=>`<div><div class="rangehead"><span>${name}</span><output id="${key}Val">3</output></div><input type="range" min="1" max="5" value="3" id="skill_${key}" aria-label="${name}"></div>`).join('');SKILLS.forEach(([k])=>$('skill_'+k).addEventListener('input',e=>$(k+'Val').textContent=e.target.value));
 function render(){
- const roster=sortedPlayers();
+ const roster=sortedPlayers($('rosterSort').value);
  $('rosterCount').textContent=players.length+' licencié'+(players.length>1?'s':'');
  $('roster').innerHTML=roster.length?roster.map(p=>{
   const id=escapeHtml(p.id);
@@ -128,7 +139,8 @@ function render(){
   persist();render();
  });
 
- $('attendanceRoster').innerHTML=roster.length?roster.map(p=>`
+ const attendance=sortedPlayers('name');
+ $('attendanceRoster').innerHTML=attendance.length?attendance.map(p=>`
   <label class="player attendance-player">
    <input type="checkbox" aria-label="Présence de ${escapeHtml(p.name)}" data-pres="${escapeHtml(p.id)}" ${p.present?'checked':''}>
    <span class="info"><span class="name">${escapeHtml(p.name)}</span></span>
@@ -393,6 +405,10 @@ const historyStore=(()=>{
  const KEY='basket-sessions-v2';
  const WEEKDAY_KEY='basket-statistics-weekdays';
  const WEEKDAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+ const WEEKDAY_COLORS=['#0072b2','#c45100','#007a50','#a44787','#996400','#2684a6','#364360'];
+ const DAY_MS=86400000;
+ const calendarDay=date=>Date.parse(date+'T00:00:00Z')/DAY_MS;
+ const weekdayIndex=day=>(new Date(day*DAY_MS).getUTCDay()+6)%7;
  const averageFormat=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
  const rateFormat=new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:1});
  let sessions=[],draft=null,blocked=false;
@@ -510,18 +526,61 @@ const historyStore=(()=>{
  });
  $('saveSessionBtn').onclick=saveToday;
  new MutationObserver(()=>$('saveSessionBtn').disabled=$('copyBtn').disabled).observe($('copyBtn'),{attributes:true,attributeFilter:['disabled']});
- function graph(container,values,labels){
-  const yMax=Math.max(0,...values),description='Nombre de joueurs présents par jour enregistré';
-  if(!labels.length){$(container).innerHTML='<p class="history-empty">Aucune séance enregistrée. Créez-en une dans « Gérer les séances » ou enregistrez une composition depuis Entraînement.</p>';return}
-  const width=Math.max(300,Math.min(720,$(container).clientWidth||720)),height=280,left=48,right=20,top=22,bottom=55,max=Math.max(1,yMax),plotWidth=width-left-right,plotHeight=height-top-bottom;
-  const x=i=>labels.length===1?left+plotWidth/2:left+i*plotWidth/(labels.length-1),y=n=>height-bottom-n/max*plotHeight;
+ function calendarDividers(firstDay,lastDay,x,top,bottom,plotWidth){
+  // Keep grid lines readable when the date range is wider than the available pixels.
+  const daysPerMark=(lastDay-firstDay)*3/plotWidth;
+  const monthStride=Math.max(1,Math.ceil(daysPerMark/28));
+  const weekStride=7*Math.max(1,Math.ceil(daysPerMark/7));
+  const month=new Date(firstDay*DAY_MS);
+  month.setUTCMonth(month.getUTCMonth()+1,1);
+  const monthDays=new Set();
+  while(month.getTime()/DAY_MS<=lastDay){
+   monthDays.add(month.getTime()/DAY_MS);
+   month.setUTCMonth(month.getUTCMonth()+monthStride,1);
+  }
+  const line=(day,kind)=>`<line class="attendance-${kind}-divider" x1="${x(day-0.5)}" x2="${x(day-0.5)}" y1="${top}" y2="${bottom}" stroke="#6f879a" stroke-width="0.7"${kind==='week'?' stroke-dasharray="1 3"':''}/>`;
+  let lines='';
+  for(let day=firstDay+7-weekdayIndex(firstDay);day<=lastDay;day+=weekStride){
+   if(!monthDays.has(day))lines+=line(day,'week');
+  }
+  for(const day of monthDays)lines+=line(day,'month');
+  return lines;
+ }
+ function renderAttendanceChart(dates,values){
+  const container=$('attendanceChart');
+  if(!dates.length){container.innerHTML='<p class="history-empty">Aucune séance enregistrée. Créez-en une dans « Gérer les séances » ou enregistrez une composition depuis Entraînement.</p>';return}
+  const days=dates.map(calendarDay),firstDay=days[0],lastDay=days.at(-1);
+  const width=Math.max(300,Math.min(720,container.clientWidth||720)),height=280,left=48,right=20,top=22,bottom=225;
+  const max=Math.max(1,...values),plotWidth=width-left-right;
+  const x=day=>firstDay===lastDay?left+plotWidth/2:left+(day-firstDay)*plotWidth/(lastDay-firstDay);
+  const y=count=>bottom-count*(bottom-top)/max;
   let content='';
-  const ticks=[...new Set([0,Math.ceil(max/2),max])];
-  for(const n of ticks)content+=`<line x1="${left}" x2="${width-right}" y1="${y(n)}" y2="${y(n)}" stroke="#d7eaf4"/><text x="${left-8}" y="${y(n)+4}" text-anchor="end">${n}</text>`;
-  labels.forEach((label,i)=>{if(labels.length<7||i===0||i===labels.length-1||i===Math.floor(labels.length/2))content+=`<text x="${x(i)}" y="${height-20}" text-anchor="${labels.length>1&&i===0?'start':labels.length>1&&i===labels.length-1?'end':'middle'}">${escapeHtml(dateLabel(label))}</text>`});
-  content+=`<polyline points="${values.map((n,i)=>x(i)+','+y(n)).join(' ')}" fill="none" stroke="#087eaf" stroke-width="2.5"/>`;
-  values.forEach((n,i)=>content+=`<circle cx="${x(i)}" cy="${y(n)}" r="4" fill="#087eaf"><title>${escapeHtml(dateLabel(labels[i]))} : ${n} présent${n>1?'s':''}</title></circle>`);
-  $(container).innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>`;
+  for(const tick of new Set([0,Math.ceil(max/2),max])){
+   content+=`<line x1="${left}" x2="${width-right}" y1="${y(tick)}" y2="${y(tick)}" stroke="#d7eaf4"/><text x="${left-8}" y="${y(tick)+4}" text-anchor="end">${tick}</text>`;
+  }
+  content+=calendarDividers(firstDay,lastDay,x,top,bottom,plotWidth);
+  const dateText=(index,anchor)=>`<text x="${x(days[index])}" y="${height-20}" text-anchor="${anchor}">${escapeHtml(dateLabel(dates[index]))}</text>`;
+  if(days.length===1)content+=dateText(0,'middle');
+  else{
+   content+=dateText(0,'start');
+   let previousLabel=x(firstDay)+42;
+   for(let index=1;index<days.length-1;index++){
+    const position=x(days[index]);
+    if(position-previousLabel<69||x(lastDay)-position<86)continue;
+    content+=dateText(index,'middle');
+    previousLabel=position;
+   }
+   content+=dateText(days.length-1,'end');
+  }
+  content+=`<polyline points="${values.map((count,index)=>x(days[index])+','+y(count)).join(' ')}" fill="none" stroke="#60778c" stroke-width="2"/>`;
+  values.forEach((count,index)=>{
+   const weekday=weekdayIndex(days[index]);
+   content+=`<circle cx="${x(days[index])}" cy="${y(count)}" r="4.5" fill="${WEEKDAY_COLORS[weekday]}" stroke="white" stroke-width="1"><title>${WEEKDAYS[weekday]} ${escapeHtml(dateLabel(dates[index]))} · ${count} présent${count>1?'s':''}</title></circle>`;
+  });
+  const description='Nombre de joueurs présents par jour enregistré';
+  const legend=WEEKDAYS.map((day,index)=>`<li><span aria-hidden="true" style="background:${WEEKDAY_COLORS[index]}"></span>${day}</li>`).join('');
+  container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>
+   <ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${legend}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
  }
  function renderTeammates(participants){
   const selected=$('teammateReference').value;
@@ -578,7 +637,7 @@ const historyStore=(()=>{
  }
  function renderCharts(){
   const dates=sessions.map(s=>s.date),counts=sessions.map(s=>s.players.length);
-  graph('attendanceChart',counts,dates);
+  renderAttendanceChart(dates,counts);
   $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th>Jour</th><th>Présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune donnée.</p>';
   const participants=new Map();
   const totals=WEEKDAYS.map(()=>({sessions:0,players:0}));
@@ -589,7 +648,7 @@ const historyStore=(()=>{
    return entry;
   }
   for(const session of sessions){
-   const day=(new Date(session.date+'T00:00:00Z').getUTCDay()+6)%7;
+   const day=weekdayIndex(calendarDay(session.date));
    totals[day].sessions++;
    totals[day].players+=session.players.length;
    for(const player of session.players){
@@ -641,7 +700,8 @@ const historyStore=(()=>{
   $('newManualSession').disabled=creating;
   if(!draft){$('sessionEditor').innerHTML='<p class="history-empty">Créez une séance pour commencer à suivre les présences.</p>';return}
   const teamOptions=id=>'<option value="">Non affecté</option>'+draft.teams.map(team=>`<option value="${escapeHtml(team.id)}" ${team.playerIds.includes(id)?'selected':''}>${escapeHtml(team.name)}</option>`).join('');
-  const available=players.filter(p=>!draft.players.some(recorded=>recorded.id===p.id));
+  const presentIds=new Set(draft.players.map(p=>p.id));
+  const available=players.filter(p=>!presentIds.has(p.id)).sort(comparePlayerNames);
   $('sessionEditor').innerHTML=`
    ${creating?'<h3>Nouvelle séance</h3><p class="muted">Choisissez la date, puis ajoutez les joueurs présents. Les équipes sont facultatives.</p>':''}
    <div class="history-actions"><div><label for="sessionDate">Date de la séance</label><input id="sessionDate" type="date" value="${draft.date}"></div><button id="saveHistoryEdits" class="primary">${creating?'Enregistrer la séance':'Enregistrer les modifications'}</button>${creating?'<button id="cancelManualSession" class="outline">Annuler</button>':'<button id="deleteSession" class="danger">Supprimer la séance</button>'}</div>

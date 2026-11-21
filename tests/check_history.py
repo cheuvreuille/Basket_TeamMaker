@@ -219,6 +219,34 @@ try:
   page.reload();history()
   assert page.locator('#weekdayAttendance tbody th').all_text_contents()==['Mercredi','Dimanche']
   assert page.locator('[data-ranking-player="p0"] td[title="3 sur 4 séances"]').count()==1
+  # The same alphabetical order applies across lists, regardless of the roster's selected sort.
+  unordered=[dict(player,name=name) for player,name in zip(roster,['Zoé','émile','André'])]
+  dates=['2026-10-30','2026-10-31','2026-11-02','2026-11-06','2026-11-09']
+  upload(dict(players=unordered,sessions=[dict(date=date,players=unordered[:1],teams=[]) for date in dates]))
+  page.locator('#rosterTab').click()
+  alphabetical=['André','émile','Zoé']
+  assert page.locator('#rosterSort').input_value()=='name'
+  assert page.locator('#roster .name').all_text_contents()==alphabetical
+  page.locator('#rosterSort').select_option('original')
+  assert page.locator('#roster .name').all_text_contents()==['Zoé','émile','André']
+  training()
+  assert page.locator('#attendanceRoster .name').all_text_contents()==alphabetical
+  history()
+  page.locator('#newManualSession').click()
+  assert page.locator('#historyAddPlayer option').all_text_contents()[1:]==alphabetical
+  page.locator('#cancelManualSession').click()
+  # Marker colours follow weekdays and calendar lines fall between the right dates.
+  chart=page.locator('#attendanceChart')
+  points=chart.locator('circle').evaluate_all('(points)=>points.map(p=>({x:Number(p.getAttribute("cx")),color:p.getAttribute("fill")}))')
+  assert points[0]['color']==points[3]['color'] and points[2]['color']==points[4]['color']
+  assert len({point['color'] for point in points})==3
+  assert points[3]['x']-points[2]['x']>3*(points[1]['x']-points[0]['x'])
+  month=chart.locator('.attendance-month-divider')
+  weeks=chart.locator('.attendance-week-divider')
+  assert month.count()==1 and weeks.count()==2
+  assert month.get_attribute('stroke-dasharray') is None and weeks.first.get_attribute('stroke-dasharray')=='1 3'
+  assert points[1]['x']<float(month.get_attribute('x1'))<float(weeks.first.get_attribute('x1'))<points[2]['x']
+  assert chart.locator('.chart-legend li').count()==9
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

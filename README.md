@@ -73,24 +73,25 @@ Dans **Statistique**, choisissez **Créer une séance manuellement**, renseignez
 
 L’onglet **Statistique** affiche :
 
-- Une courbe du nombre de présents pour chaque jour enregistré, avec un point par séance.
+- Une courbe colorée par jour de la semaine sélectionné, avec un point par séance et des repères pour les débuts de semaine et de mois.
 - La moyenne des présents par jour de la semaine et le nombre de séances pris en compte.
 - Un tableau de classement des joueurs, du plus au moins présent, avec le rang et le nombre total de participations. Les égalités sont départagées par nom. Les joueurs actuels sans présence sont affichés à zéro ; les anciens participants restent visibles même s’ils ont quitté l’effectif. Les noms courants sont utilisés pour les joueurs de l’effectif, et les derniers noms enregistrés pour les autres. L’identité est suivie par identifiant de joueur, pas par nom.
 - Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
 
-Le classement ajoute un pourcentage pour chaque jour affiché. Par exemple, trois participations sur quatre séances du mercredi donnent 75 %. La moyenne et les pourcentages affichent un tiret pour les jours sans séance. Les sept jours sont affichés par défaut. La sélection se fait dans **Configuration** et s’enregistre dans le navigateur.
+Le classement ajoute un pourcentage pour chaque jour affiché. Par exemple, trois participations sur quatre séances du mercredi donnent 75 %. La moyenne et les pourcentages affichent un tiret pour les jours sans séance. Les sept jours sont affichés par défaut. La sélection dans **Configuration** s’applique au graphique, à sa légende, aux moyennes et aux colonnes de pourcentage. Elle est enregistrée dans le navigateur et restaurée à l’import d’une sauvegarde qui la contient.
 
 Les corrections portent sur l’historique des séances. L’effectif, la sélection des présents et les compositions en cours se gèrent dans les onglets **Effectif** et **Entraînement**.
 
 ### Sauvegarde et compatibilité
 
-L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et la version JSON `1`, avec un champ supplémentaire :
+L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et la version JSON `1`. Il contient les séances et les jours sélectionnés.
 
 ```json
 {
   "version": 1,
   "players": [],
-  "sessions": []
+  "sessions": [],
+  "statisticsWeekdays": [0, 2, 4]
 }
 ```
 
@@ -98,7 +99,8 @@ Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copie
 
 - Les anciens tableaux de joueurs et les objets JSON sans `sessions` remplacent toujours l’effectif et **conservent l’historique local existant**.
 - Un objet avec `sessions` remplace l’effectif et l’historique après validation. `"sessions": []` vide explicitement l’historique.
-- Un historique invalide (date en double, joueur inconnu dans une équipe, affectation en double…) bloque l’import entier : aucune modification partielle de l’effectif.
+- `statisticsWeekdays` contient les jours sélectionnés, de `0` pour lundi à `6` pour dimanche. Une liste vide masque tous les jours. Un fichier sans ce champ conserve le réglage actuel.
+- Un historique ou une sélection de jours invalide bloque l’import entier.
 - Les anciennes versions de l’application peuvent encore lire `players`, mais ignorent `sessions` et ne le réexportent pas.
 
 Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de la clé existante des joueurs. Aucun serveur, compte ni service externe n’est nécessaire. Exportez régulièrement le JSON pour conserver une sauvegarde des deux ensembles de données.

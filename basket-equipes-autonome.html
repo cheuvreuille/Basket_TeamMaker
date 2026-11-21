@@ -70,7 +70,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
  <section class="panel configuration-card">
   <fieldset class="weekday-preferences" aria-describedby="weekdayHelp">
    <legend>Jours affichés dans les statistiques</legend>
-   <p id="weekdayHelp" class="muted">Choisissez les jours à afficher dans les moyennes et le classement. Ce réglage est enregistré dans ce navigateur.</p>
+   <p id="weekdayHelp" class="muted">Choisissez les jours à afficher dans le graphique, les moyennes et le classement. Ce réglage est conservé dans ce navigateur et dans l’export JSON.</p>
    <div id="weekdayOptions" class="weekday-options"></div>
   </fieldset>
   <p id="weekdayStatus" class="muted" role="status" hidden></p>
@@ -165,7 +165,25 @@ function topRole(p){let x=SKILLS.slice().sort((a,b)=>(p.skills[b[0]]||3)-(p.skil
 function edit(id){let p=players.find(p=>p.id===id);editing=id;$('editorTitle').textContent='Modifier le joueur';$('playerName').value=p.name;$('height').value=p.height;$('level').value=p.level;$('gender').value=normalizeGender(p.gender);setEditorPositions(p);setEditorTeamwork(p.teamwork);SKILLS.forEach(([k])=>{$('skill_'+k).value=p.skills[k]||3;$(k+'Val').textContent=p.skills[k]||3});$('saveBtn').textContent='Enregistrer';$('cancelBtn').classList.remove('hidden');$('playerName').focus()}
 function clearEditor(){editing=null;$('editorTitle').textContent='Ajouter un joueur';$('playerName').value='';$('height').value=180;$('level').value='3';$('gender').value='unspecified';setEditorPositions({primaryPosition:null,secondaryPositions:[]});setEditorTeamwork(0);SKILLS.forEach(([k])=>{$('skill_'+k).value=3;$(k+'Val').textContent=3});$('saveBtn').textContent='Ajouter au groupe';$('cancelBtn').classList.add('hidden')}
 $('saveBtn').onclick=()=>{let name=$('playerName').value.trim(),height=Number($('height').value);if(!name||height<130||height>230){alert('Renseignez un nom et une taille entre 130 et 230 cm.');return}if(!$('primaryPosition').value){alert('Choisissez un poste principal.');return}let skills=Object.fromEntries(SKILLS.map(([k])=>[k,Number($('skill_'+k).value)]));if(editing){Object.assign(players.find(p=>p.id===editing),{name,height,level:Number($('level').value),gender:$('gender').value,teamwork:normalizeTeamwork($('teamwork').value),...editorPositions(),skills})}else players.push({id:crypto.randomUUID(),name,height,level:Number($('level').value),gender:$('gender').value,teamwork:normalizeTeamwork($('teamwork').value),...editorPositions(),skills,present:true});persist();clearEditor();render()};$('cancelBtn').onclick=clearEditor;$('allBtn').onclick=()=>setAllAttendance(true);$('noneBtn').onclick=()=>setAllAttendance(false);
-$('exportBtn').onclick=()=>{let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({version:1,players,sessions:historyStore.exportSessions()},null,2)],{type:'application/json'}));a.download='basket-joueurs.json';a.click();URL.revokeObjectURL(a.href)};$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let v=JSON.parse(await f.text()),list=Array.isArray(v)?v:v.players;if(!Array.isArray(list)||!list.every(p=>p&&typeof p.name==='string'&&Number.isFinite(p.height)&&Number.isFinite(p.level)))throw Error('Format invalide');const nextSessions=historyStore.readImport(v),nextPlayers=list.map(p=>({id:p.id||crypto.randomUUID(),name:p.name,height:p.height,level:p.level,gender:normalizeGender(p.gender),teamwork:normalizeTeamwork(p.teamwork),...normalizePlayerPositions(p),skills:Object.fromEntries(SKILLS.map(([k])=>[k,Math.max(1,Math.min(5,Number(p.skills?.[k])||3))])),present:p.present!==false}));historyStore.importData(nextPlayers,nextSessions);players=nextPlayers;render();clearEditor()}catch(err){alert('Import impossible : '+err.message)}e.target.value=''};
+$('exportBtn').onclick=()=>{
+ const backup={version:1,players,sessions:historyStore.exportSessions(),statisticsWeekdays:historyStore.exportWeekdays()};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
+ const link=document.createElement('a');
+ link.href=url;link.download='basket-joueurs.json';link.click();URL.revokeObjectURL(url);
+};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async event=>{
+ const input=event.target,file=input.files[0];
+ if(!file)return;
+ try{
+  const backup=JSON.parse(await file.text()),list=Array.isArray(backup)?backup:backup?.players;
+  if(!Array.isArray(list)||!list.every(p=>p&&typeof p.name==='string'&&Number.isFinite(p.height)&&Number.isFinite(p.level)))throw Error('Format invalide');
+  const nextPlayers=list.map(p=>({id:p.id||crypto.randomUUID(),name:p.name,height:p.height,level:p.level,gender:normalizeGender(p.gender),teamwork:normalizeTeamwork(p.teamwork),...normalizePlayerPositions(p),skills:Object.fromEntries(SKILLS.map(([k])=>[k,Math.max(1,Math.min(5,Number(p.skills?.[k])||3))])),present:p.present!==false}));
+  historyStore.importData(nextPlayers,backup);
+  render();clearEditor();
+ }catch(error){alert('Import impossible : '+error.message)}
+ finally{input.value=''}
+};
 function updateCount(){const n=players.filter(p=>p.present).length,count=Number($('teamCount').value);const min=Math.floor(n/count),extra=n%count;$('compositionHelp').textContent=n<count?`Il faut au moins ${count} joueurs présents pour former ${count} équipes.`:`${n} joueurs présents → ${count} équipes : ${extra} équipe(s) de ${min+1} joueur(s) et ${count-extra} équipe(s) de ${min} joueur(s). Tous les présents jouent. Les postes renseignés sont pris en compte dans l’équilibrage.`}
 $('teamCount').onchange=updateCount;
 // Each engine keeps its own scoring and search functions. Preserve v1.0 when adding engines.
@@ -405,6 +423,7 @@ const historyStore=(()=>{
  const KEY='basket-sessions-v2';
  const WEEKDAY_KEY='basket-statistics-weekdays';
  const WEEKDAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+ const ALL_WEEKDAYS=WEEKDAYS.map((_,day)=>day);
  const WEEKDAY_COLORS=['#0072b2','#c45100','#007a50','#a44787','#996400','#2684a6','#364360'];
  const DAY_MS=86400000;
  const calendarDay=date=>Date.parse(date+'T00:00:00Z')/DAY_MS;
@@ -416,15 +435,22 @@ const historyStore=(()=>{
  const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('fr-FR');
  function today(){const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
  function validDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value}
+ function normalizeWeekdays(value){
+  if(!Array.isArray(value)||value.some(day=>!ALL_WEEKDAYS.includes(day)))throw Error('Les jours des statistiques doivent être des entiers de 0 (lundi) à 6 (dimanche).');
+  return ALL_WEEKDAYS.filter(day=>value.includes(day));
+ }
  function readWeekdayOptions(){
   try{
    const saved=JSON.parse(localStorage.getItem(WEEKDAY_KEY));
-   if(Array.isArray(saved))return WEEKDAYS.map((_,day)=>day).filter(day=>saved.includes(day));
+   if(saved!==null)return normalizeWeekdays(saved);
   }catch{}
-  return WEEKDAYS.map((_,day)=>day);
+  return ALL_WEEKDAYS.slice();
  }
  let displayedDays=readWeekdayOptions();
- $('weekdayOptions').innerHTML=WEEKDAYS.map((name,day)=>`<label><input type="checkbox" value="${day}" ${displayedDays.includes(day)?'checked':''}>${name}</label>`).join('');
+ function renderWeekdayOptions(){
+  $('weekdayOptions').innerHTML=WEEKDAYS.map((name,day)=>`<label><input type="checkbox" value="${day}" ${displayedDays.includes(day)?'checked':''}>${name}</label>`).join('');
+ }
+ renderWeekdayOptions();
  $('weekdayOptions').addEventListener('change',()=>{
   displayedDays=[...$('weekdayOptions').querySelectorAll('input:checked')].map(input=>Number(input.value));
   $('weekdayStatus').hidden=true;
@@ -470,18 +496,32 @@ const historyStore=(()=>{
   if(blocked)throw Error('Importez une sauvegarde valide pour restaurer l’historique.');
   const checked=normalize(next);localStorage.setItem(KEY,JSON.stringify(checked));sessions=checked;refresh(selectedId);status(message);
  }
- function importData(nextPlayers,nextSessions){
-  const checked=nextSessions===undefined?sessions:normalize(nextSessions);
-  const oldPlayers=localStorage.getItem(STORAGE),oldSessions=localStorage.getItem(KEY);
+ function importData(nextPlayers,backup){
+  const hasSessions=Object.hasOwn(backup,'sessions'),hasWeekdays=Object.hasOwn(backup,'statisticsWeekdays');
+  const nextSessions=hasSessions?normalize(backup.sessions):sessions;
+  const nextWeekdays=hasWeekdays?normalizeWeekdays(backup.statisticsWeekdays):displayedDays;
+  const updates=[[STORAGE,JSON.stringify(nextPlayers)]];
+  if(hasSessions)updates.push([KEY,JSON.stringify(nextSessions)]);
+  if(hasWeekdays)updates.push([WEEKDAY_KEY,JSON.stringify(nextWeekdays)]);
+  const previous=updates.map(([key])=>localStorage.getItem(key));
+  let written=0;
   try{
-   localStorage.setItem(STORAGE,JSON.stringify(nextPlayers));
-   if(nextSessions!==undefined)localStorage.setItem(KEY,JSON.stringify(checked));
+   for(const [key,value] of updates){localStorage.setItem(key,value);written++}
   }catch(error){
-   try{if(oldPlayers===null)localStorage.removeItem(STORAGE);else localStorage.setItem(STORAGE,oldPlayers);if(oldSessions===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,oldSessions)}catch{}
+   for(let i=written-1;i>=0;i--){
+    const [key]=updates[i];
+    try{if(previous[i]===null)localStorage.removeItem(key);else localStorage.setItem(key,previous[i])}catch{}
+   }
    throw error;
   }
-  sessions=checked;players=nextPlayers;if(nextSessions!==undefined)blocked=false;
-  draft=null;refresh();if(!blocked)status(nextSessions===undefined?'Effectif importé. Historique existant conservé.':'Effectif et historique importés.');
+  sessions=nextSessions;players=nextPlayers;displayedDays=nextWeekdays;
+  if(hasSessions)blocked=false;
+  if(hasWeekdays){renderWeekdayOptions();$('weekdayStatus').hidden=true}
+  draft=null;refresh();
+  if(!blocked){
+   const message=hasSessions?'Effectif et historique importés.':'Effectif importé. Historique existant conservé.';
+   status(message+(hasWeekdays?' Jours des statistiques restaurés.':''));
+  }
  }
  function saveToday(){
   try{
@@ -548,7 +588,11 @@ const historyStore=(()=>{
  }
  function renderAttendanceChart(dates,values){
   const container=$('attendanceChart');
-  if(!dates.length){container.innerHTML='<p class="history-empty">Aucune séance enregistrée. Créez-en une dans « Gérer les séances » ou enregistrez une composition depuis Entraînement.</p>';return}
+  if(!dates.length){
+   const message=!displayedDays.length?'Choisissez les jours à afficher dans Configuration.':sessions.length?'Aucune séance enregistrée pour les jours sélectionnés.':'Aucune séance enregistrée. Créez-en une dans « Gérer les séances » ou enregistrez une composition depuis Entraînement.';
+   container.innerHTML=`<p class="history-empty">${message}</p>`;
+   return;
+  }
   const days=dates.map(calendarDay),firstDay=days[0],lastDay=days.at(-1);
   const width=Math.max(300,Math.min(720,container.clientWidth||720)),height=280,left=48,right=20,top=22,bottom=225;
   const max=Math.max(1,...values),plotWidth=width-left-right;
@@ -572,13 +616,22 @@ const historyStore=(()=>{
    }
    content+=dateText(days.length-1,'end');
   }
-  content+=`<polyline points="${values.map((count,index)=>x(days[index])+','+y(count)).join(' ')}" fill="none" stroke="#60778c" stroke-width="2"/>`;
+  const series=WEEKDAYS.map(()=>[]);
   values.forEach((count,index)=>{
    const weekday=weekdayIndex(days[index]);
-   content+=`<circle cx="${x(days[index])}" cy="${y(count)}" r="4.5" fill="${WEEKDAY_COLORS[weekday]}" stroke="white" stroke-width="1"><title>${WEEKDAYS[weekday]} ${escapeHtml(dateLabel(dates[index]))} · ${count} présent${count>1?'s':''}</title></circle>`;
+   series[weekday].push({x:x(days[index]),y:y(count),date:dates[index],count});
   });
+  for(const weekday of displayedDays){
+   const points=series[weekday];
+   if(!points.length)continue;
+   const color=WEEKDAY_COLORS[weekday];
+   content+=`<g data-attendance-weekday="${weekday}">`;
+   if(points.length>1)content+=`<polyline points="${points.map(point=>`${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2"/>`;
+   for(const point of points)content+=`<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="${color}" stroke="white" stroke-width="1"><title>${WEEKDAYS[weekday]} ${escapeHtml(dateLabel(point.date))} · ${point.count} présent${point.count>1?'s':''}</title></circle>`;
+   content+='</g>';
+  }
   const description='Nombre de joueurs présents par jour enregistré';
-  const legend=WEEKDAYS.map((day,index)=>`<li><span aria-hidden="true" style="background:${WEEKDAY_COLORS[index]}"></span>${day}</li>`).join('');
+  const legend=displayedDays.map(day=>`<li data-legend-weekday="${day}"><span aria-hidden="true" style="background:${WEEKDAY_COLORS[day]}"></span>${WEEKDAYS[day]}</li>`).join('');
   container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>
    <ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${legend}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
  }
@@ -636,7 +689,8 @@ const historyStore=(()=>{
   $('participationData').innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th><th scope="col">Participations</th>${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
  }
  function renderCharts(){
-  const dates=sessions.map(s=>s.date),counts=sessions.map(s=>s.players.length);
+  const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));
+  const dates=visibleSessions.map(s=>s.date),counts=visibleSessions.map(s=>s.players.length);
   renderAttendanceChart(dates,counts);
   $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th>Jour</th><th>Présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune donnée.</p>';
   const participants=new Map();
@@ -733,7 +787,7 @@ const historyStore=(()=>{
   }
  }
  refresh();
- return Object.freeze({exportSessions:()=>clone(sessions),readImport:value=>value&&Object.hasOwn(value,'sessions')?normalize(value.sessions):undefined,importData});
+ return Object.freeze({exportSessions:()=>clone(sessions),exportWeekdays:()=>displayedDays.slice(),importData});
 })();
 
 </script></body></html>

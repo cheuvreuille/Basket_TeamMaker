@@ -83,7 +83,7 @@ try:
   assert len(records())==1 and records()[0]['id']==first_id
   history()
   assert page.locator('#attendanceChart svg').count()==1
-  assert page.locator('#attendanceChart polyline').count()==1
+  assert page.locator('#attendanceChart polyline').count()==0
   assert page.locator('#attendanceChart circle').count()==1
   assert page.locator('#attendanceChart rect').count()==0
   assert page.locator('#participationChart').count()==0
@@ -152,13 +152,14 @@ try:
   page.once('dialog',lambda d:(alerts.append(d.message),d.dismiss()))
   upload(bad)
   assert alerts and records()==history_before and page.evaluate('players.length')==6
-  # If storage fails during import, both the old roster and history are restored.
-  page.evaluate('''()=>{window.oldSetItem=Storage.prototype.setItem;window.failedWrite=false;Storage.prototype.setItem=function(key,value){if(key==='basket-sessions-v2'&&!window.failedWrite){window.failedWrite=true;throw new DOMException('Storage full','QuotaExceededError')}return window.oldSetItem.call(this,key,value)}}''')
-  smaller=json.loads(json.dumps(package));smaller['players']=roster[:1]
+  # Failure on the final write must also roll back the roster and history.
+  page.evaluate('''()=>{window.oldSetItem=Storage.prototype.setItem;window.failedWrite=false;Storage.prototype.setItem=function(key,value){if(key==='basket-statistics-weekdays'&&!window.failedWrite){window.failedWrite=true;throw new DOMException('Storage full','QuotaExceededError')}return window.oldSetItem.call(this,key,value)}}''')
+  smaller=dict(package,players=roster[:1],sessions=[],statisticsWeekdays=[4])
   page.once('dialog',lambda d:d.dismiss());upload(smaller)
   page.evaluate('()=>{Storage.prototype.setItem=window.oldSetItem}')
   assert records()==history_before and page.evaluate('players.length')==6
   assert len(page.evaluate('JSON.parse(localStorage.getItem("basket-balancer-v1"))'))==6
+  assert export()['statisticsWeekdays']==list(range(7))
   # A renamed player containing markup is displayed as text, never executed.
   hostile=json.loads(json.dumps(package));hostile['sessions'][0]['players'][0]['name']='<img src=x onerror="window.bad=1">'
   upload(hostile)
@@ -168,7 +169,7 @@ try:
   page.reload();history()
   assert records()==history_before
   assert page.locator('#attendanceChart circle').count()==2
-  assert page.locator('#attendanceChart polyline').count()==1
+  assert page.locator('#attendanceChart polyline').count()==0
   # Delete an entire day and verify recalculation.
   page.locator('#historyDay').select_option(first_id)
   page.once('dialog',lambda d:d.accept());page.locator('#deleteSession').click()
@@ -212,7 +213,8 @@ try:
   assert page.locator('[data-ranking-player="p0"] td[title="3 sur 4 séances"]').inner_text().replace('\xa0',' ')=='75 %'
   assert page.locator('[data-ranking-player="p3"] td[title="0 sur 4 séances"]').inner_text().replace('\xa0',' ')=='0 %'
   assert page.locator('[data-ranking-player="p0"] td:last-child').text_content()=='—'
-  assert export()['sessions'][-1]==manual
+  manual_backup=export()
+  assert manual_backup['sessions'][-1]==manual and manual_backup['statisticsWeekdays']==[2,6]
   page.locator('#newManualSession').click()
   page.locator('#cancelManualSession').click()
   assert len(records())==4 and page.locator('#historyDay').input_value()==manual['id']
@@ -222,7 +224,7 @@ try:
   # The same alphabetical order applies across lists, regardless of the roster's selected sort.
   unordered=[dict(player,name=name) for player,name in zip(roster,['Zoé','émile','André'])]
   dates=['2026-10-30','2026-10-31','2026-11-02','2026-11-06','2026-11-09']
-  upload(dict(players=unordered,sessions=[dict(date=date,players=unordered[:1],teams=[]) for date in dates]))
+  upload(dict(players=unordered,sessions=[dict(date=date,players=unordered[:1],teams=[]) for date in dates],statisticsWeekdays=[4,0,5,4]))
   page.locator('#rosterTab').click()
   alphabetical=['André','émile','Zoé']
   assert page.locator('#rosterSort').input_value()=='name'
@@ -237,7 +239,7 @@ try:
   page.locator('#cancelManualSession').click()
   # Marker colours follow weekdays and calendar lines fall between the right dates.
   chart=page.locator('#attendanceChart')
-  points=chart.locator('circle').evaluate_all('(points)=>points.map(p=>({x:Number(p.getAttribute("cx")),color:p.getAttribute("fill")}))')
+  points=chart.locator('circle').evaluate_all('(points)=>points.map(p=>({x:Number(p.getAttribute("cx")),color:p.getAttribute("fill")})).sort((a,b)=>a.x-b.x)')
   assert points[0]['color']==points[3]['color'] and points[2]['color']==points[4]['color']
   assert len({point['color'] for point in points})==3
   assert points[3]['x']-points[2]['x']>3*(points[1]['x']-points[0]['x'])
@@ -246,7 +248,42 @@ try:
   assert month.count()==1 and weeks.count()==2
   assert month.get_attribute('stroke-dasharray') is None and weeks.first.get_attribute('stroke-dasharray')=='1 3'
   assert points[1]['x']<float(month.get_attribute('x1'))<float(weeks.first.get_attribute('x1'))<points[2]['x']
-  assert chart.locator('.chart-legend li').count()==9
+  series=chart.locator('svg g[data-attendance-weekday]')
+  assert series.evaluate_all('(groups)=>groups.map(g=>g.dataset.attendanceWeekday)')==['0','4','5']
+  for weekday,point_count in [(0,2),(4,2),(5,1)]:
+   group=chart.locator(f'[data-attendance-weekday="{weekday}"]')
+   assert group.locator('circle').count()==point_count
+   if point_count>1:
+    curve=group.locator('polyline')
+    assert curve.get_attribute('stroke')==group.locator('circle').first.get_attribute('fill')
+    assert curve.get_attribute('points').split()==group.locator('circle').evaluate_all('(points)=>points.map(p=>p.getAttribute("cx")+","+p.getAttribute("cy"))')
+   else:
+    assert group.locator('polyline').count()==0
+  assert chart.locator('[data-legend-weekday]').all_text_contents()==['Lundi','Vendredi','Samedi']
+  weekday_backup=export()
+  assert weekday_backup['statisticsWeekdays']==[0,4,5]
+  page.locator('#configTab').click()
+  page.get_by_role('checkbox',name='Samedi',exact=True).uncheck()
+  upload(unordered) # Old player-only exports retain the current weekday selection.
+  history()
+  assert chart.locator('[data-legend-weekday]').all_text_contents()==['Lundi','Vendredi']
+  assert chart.locator('circle').count()==4 and chart.locator('polyline').count()==2
+  assert page.locator('#attendanceData tbody tr').count()==4
+  upload(weekday_backup)
+  page.reload()
+  page.locator('#configTab').click()
+  assert page.locator('#weekdayOptions input:checked').evaluate_all('(inputs)=>inputs.map(input=>input.value)')==['0','4','5']
+  history()
+  assert chart.locator('circle').count()==5
+  previous=records()
+  invalid=[]
+  page.once('dialog',lambda dialog:(invalid.append(dialog.message),dialog.dismiss()))
+  upload(dict(players=roster,sessions=[],statisticsWeekdays=[7]))
+  assert '0 (lundi) à 6' in invalid[0] and records()==previous
+  assert export()['statisticsWeekdays']==[0,4,5] and page.evaluate('players.length')==3
+  upload(dict(weekday_backup,statisticsWeekdays=[]))
+  assert export()['statisticsWeekdays']==[] and 'Choisissez les jours' in chart.inner_text()
+  assert chart.locator('[data-legend-weekday]').count()==0
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

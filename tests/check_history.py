@@ -32,7 +32,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.0.1'
+  assert page.locator('#appVersion').inner_text()=='Version 3.0.2'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()

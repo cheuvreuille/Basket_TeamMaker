@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 3.0.2 — 22 novembre 2026
+
+- Nouveaux libellés « Moins de passe » et « Trop de passe » pour le jeu en équipe.
+
 ## 3.0.1 — 22 novembre 2026
 
 - Fiches accessibles en cliquant sur le cadre du joueur, avec ses présences par jour, sa dernière participation et ses cinq coéquipiers les plus fréquents.

@@ -26,7 +26,7 @@ try:
   def upload(data):
    page.locator('#importFile').set_input_files(dict(name='players.json',mimeType='application/json',buffer=json.dumps(data).encode()))
    page.wait_for_function('document.getElementById("importFile").value === ""')
-  assert page.locator('#appVersion').inner_text()=='Version 3.0.1'
+  assert page.locator('#appVersion').inner_text()=='Version 3.0.2'
   assert page.locator('#teamwork').input_value()=='0'
   # Pre-feature browser state and both import formats migrate to balanced.
   page.evaluate('(data)=>localStorage.setItem("basket-balancer-v1",JSON.stringify(data))',base)
@@ -37,7 +37,7 @@ try:
    assert page.evaluate('players.length===9&&players.every(p=>p.teamwork===0)')
   # Editing, all three labels, cancellation, creation, persistence.
   page.locator('[data-open-player="0"]').click()
-  for value,label in [(-1,'Trop perso'),(0,'Équilibré'),(1,'Trop altruiste')]:
+  for value,label in [(-1,'Moins de passe'),(0,'Équilibré'),(1,'Trop de passe')]:
    page.locator('#teamwork').fill(str(value))
    assert label in page.locator('#teamworkValue').inner_text()
    assert page.locator('#teamwork').get_attribute('aria-valuetext')==label

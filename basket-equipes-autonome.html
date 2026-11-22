@@ -27,8 +27,21 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .attendance-player .name{display:block}
 .attendance-player input{flex-shrink:0}
 .roster>.player{flex-shrink:0}
+.roster-player{text-align:left;color:inherit;font-weight:400;width:100%}
+.roster-player .name,.roster-player .details{display:block}
+.roster-player:hover,.roster-player[aria-current=true]{background:#eaf6fc;border-color:#87b9d1}
+.roster-player .profile-arrow{font-size:24px;color:#075a80}
+.player-history{background:#f0f8fc;border:1px solid #d7eaf4;border-radius:12px;padding:14px;margin:0 0 18px}
+.player-history h3{color:#075a80;margin:0 0 8px}
+.player-history dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:10px 0 14px;font-size:13px}
+.player-history dl div{padding:8px;background:white;border-radius:8px}
+.player-history dt{color:#547087}
+.player-history dd{margin:2px 0 0;font-weight:650}
+.player-history ol{margin:0;padding-left:22px;font-size:13px}
+.player-history li{padding:3px 0;overflow-wrap:anywhere}
+#editorTitle{overflow-wrap:anywhere}
 @media(max-width:480px){.main-tabs{gap:6px}.main-tabs button{padding:10px 12px}}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.0</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.0.1</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -39,7 +52,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 <section id="rosterPanel" role="tabpanel" aria-labelledby="rosterTab">
  <div class="grid">
   <section class="panel"><div class="summary"><h2>Joueurs de l’équipe</h2><span class="pill" id="rosterCount"></span></div><div style="margin-bottom:13px"><label for="rosterSort">Trier l’effectif</label><select id="rosterSort" style="width:100%"><option value="name" selected>Ordre alphabétique</option><option value="original">Ordre d’ajout</option><option value="height-asc">Taille croissante</option><option value="height-desc">Taille décroissante</option><option value="level-asc">Niveau croissant</option><option value="level-desc">Niveau décroissant</option><option value="gender">Genre</option></select></div><div id="roster" class="roster"></div></section>
-  <section class="panel"><h2 id="editorTitle">Ajouter un joueur</h2><div class="fields"><div class="field-wide"><label for="playerName">Prénom ou nom</label><input style="width:100%" id="playerName" placeholder="Ex. Alex Martin" maxlength="70"></div><div><label for="height">Taille (cm)</label><input id="height" type="number" min="130" max="230" value="180" style="width:100%"></div><div><label for="level">Niveau global</label><select id="level" style="width:100%"><option value="1">1 · Débutant</option><option value="2">2 · Intermédiaire -</option><option value="3" selected>3 · Intermédiaire</option><option value="4">4 · Confirmé</option><option value="5">5 · Avancé</option></select></div><div class="field-wide"><label for="gender">Genre</label><select id="gender" style="width:100%"><option value="unspecified">Non renseigné</option><option value="female">Femme</option><option value="male">Homme</option><option value="other">Autre</option></select></div><div class="field-wide"><label for="primaryPosition">Poste principal</label><select id="primaryPosition" style="width:100%" aria-describedby="positionHelp"><option value="">Non renseigné</option></select></div><fieldset class="positions field-wide" aria-describedby="positionHelp"><legend>Postes secondaires (plusieurs choix)</legend><div id="positions" class="position-options"></div><p id="positionHelp" class="muted position-help">1 : meneur · 2 : arrière · 3 : ailier · 4 : ailier fort · 5 : pivot. Choisissez un poste principal ; les postes secondaires sont facultatifs.</p></fieldset><div class="field-wide"><div class="divider"></div><div class="muted" style="margin-bottom:12px">Compétences : 1 = faible · 5 = excellent</div></div><div id="skills" class="field-wide fields" style="gap:15px"></div><div class="field-wide"><div class="rangehead"><label for="teamwork">Jeu en équipe</label><output id="teamworkValue" for="teamwork">0 · Équilibré</output></div><input type="range" id="teamwork" min="-1" max="1" step="1" value="0" aria-valuetext="Équilibré" aria-describedby="teamworkHelp"><div class="teamwork-scale" id="teamworkHelp"><span>−1 · Trop perso</span><span>0 · Équilibré</span><span>1 · Trop altruiste</span></div></div></div><div class="actions"><button class="primary" id="saveBtn">Ajouter au groupe</button><button class="ghost hidden" id="cancelBtn">Annuler</button></div></section>
+  <section class="panel" id="playerEditor" aria-labelledby="editorTitle"><h2 id="editorTitle" tabindex="-1">Ajouter un joueur</h2><div id="playerHistory" class="player-history" hidden></div><div class="fields"><div class="field-wide"><label for="playerName">Prénom ou nom</label><input style="width:100%" id="playerName" placeholder="Ex. Alex Martin" maxlength="70"></div><div><label for="height">Taille (cm)</label><input id="height" type="number" min="130" max="230" value="180" style="width:100%"></div><div><label for="level">Niveau global</label><select id="level" style="width:100%"><option value="1">1 · Débutant</option><option value="2">2 · Intermédiaire -</option><option value="3" selected>3 · Intermédiaire</option><option value="4">4 · Confirmé</option><option value="5">5 · Avancé</option></select></div><div class="field-wide"><label for="gender">Genre</label><select id="gender" style="width:100%"><option value="unspecified">Non renseigné</option><option value="female">Femme</option><option value="male">Homme</option><option value="other">Autre</option></select></div><div class="field-wide"><label for="primaryPosition">Poste principal</label><select id="primaryPosition" style="width:100%" aria-describedby="positionHelp"><option value="">Non renseigné</option></select></div><fieldset class="positions field-wide" aria-describedby="positionHelp"><legend>Postes secondaires (plusieurs choix)</legend><div id="positions" class="position-options"></div><p id="positionHelp" class="muted position-help">1 : meneur · 2 : arrière · 3 : ailier · 4 : ailier fort · 5 : pivot. Choisissez un poste principal ; les postes secondaires sont facultatifs.</p></fieldset><div class="field-wide"><div class="divider"></div><div class="muted" style="margin-bottom:12px">Compétences : 1 = faible · 5 = excellent</div></div><div id="skills" class="field-wide fields" style="gap:15px"></div><div class="field-wide"><div class="rangehead"><label for="teamwork">Jeu en équipe</label><output id="teamworkValue" for="teamwork">0 · Équilibré</output></div><input type="range" id="teamwork" min="-1" max="1" step="1" value="0" aria-valuetext="Équilibré" aria-describedby="teamworkHelp"><div class="teamwork-scale" id="teamworkHelp"><span>−1 · Trop perso</span><span>0 · Équilibré</span><span>1 · Trop altruiste</span></div></div></div><div class="actions"><button class="primary" id="saveBtn">Ajouter au groupe</button><button class="ghost hidden" id="cancelBtn">Annuler</button><button class="danger hidden" id="deletePlayerBtn">Supprimer le joueur</button></div></section>
  </div>
 </section>
 <section id="trainingPanel" role="tabpanel" aria-labelledby="trainingTab" hidden>
@@ -129,20 +142,12 @@ function render(){
  $('rosterCount').textContent=players.length+' licencié'+(players.length>1?'s':'');
  $('roster').innerHTML=roster.length?roster.map(p=>{
   const id=escapeHtml(p.id);
-  return `<div class="player">
-   <div class="info"><div class="name">${escapeHtml(p.name)}</div><div class="details">${playerSummary(p)}</div></div>
-   <button class="smallbtn" data-edit="${id}">Éditer</button>
-   <button class="smallbtn" data-delete="${id}" aria-label="Supprimer ${escapeHtml(p.name)}" title="Supprimer">×</button>
-  </div>`;
+  return `<button type="button" class="player roster-player" data-open-player="${id}" aria-controls="playerEditor" aria-current="${p.id===editing}" aria-label="Ouvrir la fiche de ${escapeHtml(p.name)}">
+   <span class="info"><span class="name">${escapeHtml(p.name)}</span><span class="details">${playerSummary(p)}</span></span>
+   <span class="profile-arrow" aria-hidden="true">›</span>
+  </button>`;
  }).join(''):'<div class="muted">Aucun joueur pour le moment. Ajoutez un joueur dans le formulaire.</div>';
- $('roster').querySelectorAll('[data-edit]').forEach(button=>button.onclick=()=>edit(button.dataset.edit));
- $('roster').querySelectorAll('[data-delete]').forEach(button=>button.onclick=()=>{
-  if(!confirm('Supprimer ce joueur ?'))return;
-  const id=button.dataset.delete;
-  players=players.filter(p=>p.id!==id);
-  if(editing===id)clearEditor();
-  persist();render();
- });
+ $('roster').querySelectorAll('[data-open-player]').forEach(button=>button.onclick=()=>edit(button.dataset.openPlayer));
 
  const attendance=sortedPlayers('name');
  $('attendanceRoster').innerHTML=attendance.length?attendance.map(p=>`
@@ -167,9 +172,66 @@ function setAllAttendance(present){
  persist();updateAttendanceCount();
 }
 function topRole(p){let x=SKILLS.slice().sort((a,b)=>(p.skills[b[0]]||3)-(p.skills[a[0]]||3));return x[0][1]}
-function edit(id){let p=players.find(p=>p.id===id);editing=id;$('editorTitle').textContent='Modifier le joueur';$('playerName').value=p.name;$('height').value=p.height;$('level').value=p.level;$('gender').value=normalizeGender(p.gender);setEditorPositions(p);setEditorTeamwork(p.teamwork);SKILLS.forEach(([k])=>{$('skill_'+k).value=p.skills[k]||3;$(k+'Val').textContent=p.skills[k]||3});$('saveBtn').textContent='Enregistrer';$('cancelBtn').classList.remove('hidden');$('playerName').focus()}
-function clearEditor(){editing=null;$('editorTitle').textContent='Ajouter un joueur';$('playerName').value='';$('height').value=180;$('level').value='3';$('gender').value='unspecified';setEditorPositions({primaryPosition:null,secondaryPositions:[]});setEditorTeamwork(0);SKILLS.forEach(([k])=>{$('skill_'+k).value=3;$(k+'Val').textContent=3});$('saveBtn').textContent='Ajouter au groupe';$('cancelBtn').classList.add('hidden')}
-$('saveBtn').onclick=()=>{let name=$('playerName').value.trim(),height=Number($('height').value);if(!name||height<130||height>230){alert('Renseignez un nom et une taille entre 130 et 230 cm.');return}if(!$('primaryPosition').value){alert('Choisissez un poste principal.');return}let skills=Object.fromEntries(SKILLS.map(([k])=>[k,Number($('skill_'+k).value)]));if(editing){Object.assign(players.find(p=>p.id===editing),{name,height,level:Number($('level').value),gender:$('gender').value,teamwork:normalizeTeamwork($('teamwork').value),...editorPositions(),skills})}else players.push({id:crypto.randomUUID(),name,height,level:Number($('level').value),gender:$('gender').value,teamwork:normalizeTeamwork($('teamwork').value),...editorPositions(),skills,present:true});persist();clearEditor();render()};$('cancelBtn').onclick=clearEditor;$('allBtn').onclick=()=>setAllAttendance(true);$('noneBtn').onclick=()=>setAllAttendance(false);
+function updateRosterSelection(){
+ $('roster').querySelectorAll('[data-open-player]').forEach(card=>card.setAttribute('aria-current',String(card.dataset.openPlayer===editing)));
+}
+function focusPlayerCard(id){
+ if(id===null)return;
+ [...$('roster').querySelectorAll('[data-open-player]')].find(card=>card.dataset.openPlayer===id)?.focus();
+}
+function edit(id){
+ const player=players.find(p=>p.id===id);
+ if(!player)return;
+ editing=id;
+ updateRosterSelection();
+ $('editorTitle').textContent=player.name;
+ $('playerName').value=player.name;
+ $('height').value=player.height;
+ $('level').value=player.level;
+ $('gender').value=normalizeGender(player.gender);
+ setEditorPositions(player);
+ setEditorTeamwork(player.teamwork);
+ SKILLS.forEach(([key])=>{$('skill_'+key).value=player.skills[key]||3;$(key+'Val').textContent=player.skills[key]||3});
+ $('saveBtn').textContent='Enregistrer';
+ $('cancelBtn').classList.remove('hidden');
+ $('deletePlayerBtn').classList.remove('hidden');
+ historyStore.renderPlayerHistory(id);
+ $('editorTitle').focus();
+}
+function clearEditor(){
+ editing=null;
+ updateRosterSelection();
+ $('playerHistory').hidden=true;
+ $('editorTitle').textContent='Ajouter un joueur';
+ $('playerName').value='';
+ $('height').value=180;
+ $('level').value='3';
+ $('gender').value='unspecified';
+ setEditorPositions({primaryPosition:null,secondaryPositions:[]});
+ setEditorTeamwork(0);
+ SKILLS.forEach(([key])=>{$('skill_'+key).value=3;$(key+'Val').textContent=3});
+ $('saveBtn').textContent='Ajouter au groupe';
+ $('cancelBtn').classList.add('hidden');
+ $('deletePlayerBtn').classList.add('hidden');
+}
+$('saveBtn').onclick=()=>{
+ const name=$('playerName').value.trim(),height=Number($('height').value);
+ if(!name||height<130||height>230){alert('Renseignez un nom et une taille entre 130 et 230 cm.');return}
+ if(!$('primaryPosition').value){alert('Choisissez un poste principal.');return}
+ const skills=Object.fromEntries(SKILLS.map(([key])=>[key,Number($('skill_'+key).value)]));
+ const fields={name,height,level:Number($('level').value),gender:$('gender').value,teamwork:normalizeTeamwork($('teamwork').value),...editorPositions(),skills};
+ const editedId=editing;
+ if(editedId!==null)Object.assign(players.find(p=>p.id===editedId),fields);
+ else players.push({id:crypto.randomUUID(),...fields,present:true});
+ persist();clearEditor();render();focusPlayerCard(editedId);
+};
+$('cancelBtn').onclick=()=>{const id=editing;clearEditor();focusPlayerCard(id)};
+$('deletePlayerBtn').onclick=()=>{
+ if(editing===null||!confirm('Supprimer ce joueur ?'))return;
+ players=players.filter(player=>player.id!==editing);
+ persist();clearEditor();render();$('playerName').focus();
+};
+$('allBtn').onclick=()=>setAllAttendance(true);$('noneBtn').onclick=()=>setAllAttendance(false);
 $('exportBtn').onclick=()=>{
  const backup={version:1,players,sessions:historyStore.exportSessions(),statisticsWeekdays:historyStore.exportWeekdays()};
  const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
@@ -553,6 +615,7 @@ const historyStore=(()=>{
    if(isNewSession()){renderCharts();renderEditor()}
    else refresh();
   }
+  if(tab.id==='rosterTab'&&editing!==null)renderPlayerHistory(editing);
  }
  tabs.forEach(tab=>tab.addEventListener('click',()=>openTab(tab)));
  $('mainTabs').addEventListener('keydown',event=>{
@@ -641,17 +704,25 @@ const historyStore=(()=>{
   container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>
    <ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${legend}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
  }
+ function teammatesFor(reference,participants){
+  const counts=new Map();
+  for(const session of sessions){
+   const team=session.teams.find(team=>team.playerIds.includes(reference));
+   if(!team)continue;
+   for(const id of team.playerIds){
+    if(id!==reference)counts.set(id,(counts.get(id)||0)+1);
+   }
+  }
+  return [...counts].map(([id,count])=>({id,count,name:participants.get(id)?.name??'Joueur inconnu'}))
+   .sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
+ }
  function renderTeammates(participants){
   const selected=$('teammateReference').value;
   const names=new Map([...participants.values()].map(p=>[p.id,p.name]));
   $('teammateReference').innerHTML='<option value="">Choisir un joueur</option>'+[...names].sort((a,b)=>a[1].localeCompare(b[1],'fr')).map(([id,name])=>`<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join('');
   if(names.has(selected))$('teammateReference').value=selected;
-  const reference=$('teammateReference').value,counts=new Map();
-  if(reference)sessions.forEach(session=>{
-   const team=session.teams.find(t=>t.playerIds.includes(reference));
-   if(team)new Set(team.playerIds).forEach(id=>{if(id!==reference)counts.set(id,(counts.get(id)||0)+1)});
-  });
-  const teammates=[...counts].map(([id,count])=>({id,count,name:names.get(id)||'Joueur inconnu'})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
+  const reference=$('teammateReference').value;
+  const teammates=reference?teammatesFor(reference,participants):[];
   $('teammateData').innerHTML=teammates.length?`<table class="teammate-table"><thead><tr><th scope="col">Coéquipier</th><th scope="col">Séances ensemble</th></tr></thead><tbody>${teammates.map(p=>`<tr data-teammate-id="${escapeHtml(p.id)}"><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune séance commune dans une même équipe.</p>';
   if(!reference||!teammates.length){
    $('teammateSummary').textContent='';
@@ -720,15 +791,11 @@ const historyStore=(()=>{
    tableContainer.querySelector(`[data-ranking-sort="${column}"]`).focus({preventScroll:true});
   }));
  }
- function renderCharts(){
-  const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));
-  const dates=visibleSessions.map(s=>s.date),counts=visibleSessions.map(s=>s.players.length);
-  renderAttendanceChart(dates,counts);
-  $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th>Jour</th><th>Présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune donnée.</p>';
+ function summarizeAttendance(){
   const participants=new Map();
   const totals=WEEKDAYS.map(()=>({sessions:0,players:0}));
   function participant(p){
-   if(!participants.has(p.id))participants.set(p.id,{id:p.id,name:p.name,count:0,byDay:WEEKDAYS.map(()=>0)});
+   if(!participants.has(p.id))participants.set(p.id,{id:p.id,name:p.name,count:0,byDay:WEEKDAYS.map(()=>0),lastDate:null});
    const entry=participants.get(p.id);
    entry.name=p.name;
    return entry;
@@ -741,9 +808,38 @@ const historyStore=(()=>{
     const entry=participant(player);
     entry.count++;
     entry.byDay[day]++;
+    entry.lastDate=session.date;
    }
   }
   players.forEach(participant);
+  return {participants,totals};
+ }
+ function renderPlayerHistory(id){
+  const {participants,totals}=summarizeAttendance();
+  const player=participants.get(id);
+  if(!player)return;
+  const weekdayStats=displayedDays.map(day=>{
+   const count=player.byDay[day],total=totals[day].sessions;
+   const rate=total?rateFormat.format(count/total):'—';
+   return `<div><dt>${WEEKDAYS[day]}</dt><dd>${count} (${rate})</dd></div>`;
+  }).join('');
+  const lastDate=player.lastDate?`<time datetime="${player.lastDate}">${dateLabel(player.lastDate)}</time>`:'Aucune participation enregistrée';
+  const topTeammates=teammatesFor(id,participants).slice(0,5);
+  const teammates=topTeammates.map(({name,count})=>`<li>${escapeHtml(name)} · ${count} séance${count>1?'s':''} ensemble</li>`).join('');
+  const container=$('playerHistory');
+  container.innerHTML=`<h3>Présences par jour</h3>
+   ${weekdayStats?`<dl>${weekdayStats}</dl>`:'<p class="muted">Choisissez les jours à afficher dans Configuration.</p>'}
+   <p class="muted"><strong>Dernière participation</strong> · ${lastDate}</p>
+   <h3>Coéquipiers les plus fréquents</h3>
+   ${teammates?`<ol>${teammates}</ol>`:'<p class="muted">Aucune séance commune dans une même équipe.</p>'}`;
+  container.hidden=false;
+ }
+ function renderCharts(){
+  const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));
+  const dates=visibleSessions.map(s=>s.date),counts=visibleSessions.map(s=>s.players.length);
+  renderAttendanceChart(dates,counts);
+  $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th>Jour</th><th>Présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune donnée.</p>';
+  const {participants,totals}=summarizeAttendance();
   renderAttendanceTables(participants,totals);
   renderTeammates(participants);
   $('sessionCount').textContent=sessions.length+' séance'+(sessions.length>1?'s':'');
@@ -819,7 +915,7 @@ const historyStore=(()=>{
   }
  }
  refresh();
- return Object.freeze({exportSessions:()=>clone(sessions),exportWeekdays:()=>displayedDays.slice(),importData});
+ return Object.freeze({exportSessions:()=>clone(sessions),exportWeekdays:()=>displayedDays.slice(),importData,renderPlayerHistory});
 })();
 
 </script></body></html>

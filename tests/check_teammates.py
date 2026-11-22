@@ -67,6 +67,11 @@ try:
   large=dict(version=1,players=many,sessions=[dict(id='large',date='2026-11-13',players=many,teams=[dict(id='one',name='Une équipe',color='#ffffff',playerIds=[p['id'] for p in many])],bench=[])])
   upload(large);page.locator('#teammateReference').select_option('p0')
   assert len(counts())==8 and page.locator('#teammateData tbody tr').count()==24
+  page.locator('#rosterTab').click()
+  page.locator('[data-open-player="p0"]').click()
+  assert page.locator('#playerHistory li').count()==5
+  assert all('Joueur 0 ·' not in row for row in page.locator('#playerHistory li').all_text_contents())
+  page.locator('#historyTab').click()
   page.locator('#teammateLimit').select_option('16');assert len(counts())==16
   page.locator('#teammateLimit').select_option('all');assert len(counts())==24
   for width in [390,1280]:
@@ -89,6 +94,34 @@ try:
   upload(dict(version=1,players=people,sessions=[]))
   page.locator('#teammateReference').select_option('a')
   assert counts()=={} and 'Aucun coéquipier' in page.locator('#teammateGraph').inner_text()
+  # Open the editable card and use the same attendance history as the statistics tab.
+  extra_session=dict(date='2026-11-17',players=[people[1]],teams=[])
+  upload(dict(package,statisticsWeekdays=[1,2],sessions=package['sessions']+[extra_session]))
+  page.locator('#rosterTab').click()
+  card=page.get_by_role('button',name='Ouvrir la fiche de Alex',exact=True)
+  card.locator('.details').click()
+  profile=page.locator('#playerHistory')
+  assert card.get_attribute('aria-current')=='true'
+  assert page.locator('#editorTitle').inner_text()=='Alex' and page.locator('#playerName').input_value()=='Alex'
+  assert profile.locator('dt').all_text_contents()==['Mardi','Mercredi']
+  assert [value.replace('\xa0',' ') for value in profile.locator('dd').all_text_contents()]==['1 (50 %)','1 (100 %)']
+  assert profile.locator('time').get_attribute('datetime')=='2026-11-12'
+  assert profile.locator('li').all_text_contents()==['Bob · 3 séances ensemble','Camille · 2 séances ensemble','Dany · 1 séance ensemble']
+  page.locator('#playerName').fill('Alex Martin')
+  page.locator('#saveBtn').click()
+  updated=page.get_by_role('button',name='Ouvrir la fiche de Alex Martin',exact=True)
+  assert updated.evaluate('button=>document.activeElement===button')
+  updated.press('Enter')
+  assert page.locator('#playerName').input_value()=='Alex Martin' and profile.locator('li').count()==3
+  page.locator('#historyTab').click()
+  page.locator('#historyDay').select_option('s12')
+  page.once('dialog',lambda dialog:dialog.accept());page.locator('#deleteSession').click()
+  page.locator('#rosterTab').click()
+  assert profile.locator('time').get_attribute('datetime')=='2026-11-11'
+  assert profile.locator('li').all_text_contents()==['Bob · 2 séances ensemble','Camille · 1 séance ensemble','Dany · 1 séance ensemble']
+  page.locator('[data-open-player="f"]').click()
+  assert 'Aucune participation' in profile.inner_text() and profile.locator('li').count()==0
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

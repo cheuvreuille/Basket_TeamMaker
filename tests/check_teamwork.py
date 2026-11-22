@@ -26,7 +26,7 @@ try:
   def upload(data):
    page.locator('#importFile').set_input_files(dict(name='players.json',mimeType='application/json',buffer=json.dumps(data).encode()))
    page.wait_for_function('document.getElementById("importFile").value === ""')
-  assert page.locator('#appVersion').inner_text()=='Version 3.0'
+  assert page.locator('#appVersion').inner_text()=='Version 3.0.1'
   assert page.locator('#teamwork').input_value()=='0'
   # Pre-feature browser state and both import formats migrate to balanced.
   page.evaluate('(data)=>localStorage.setItem("basket-balancer-v1",JSON.stringify(data))',base)
@@ -36,7 +36,7 @@ try:
    upload(data)
    assert page.evaluate('players.length===9&&players.every(p=>p.teamwork===0)')
   # Editing, all three labels, cancellation, creation, persistence.
-  page.locator('[data-edit="0"]').click()
+  page.locator('[data-open-player="0"]').click()
   for value,label in [(-1,'Trop perso'),(0,'Équilibré'),(1,'Trop altruiste')]:
    page.locator('#teamwork').fill(str(value))
    assert label in page.locator('#teamworkValue').inner_text()
@@ -44,7 +44,7 @@ try:
   page.locator('#saveBtn').click()
   assert page.evaluate('players[0].teamwork')==1
   assert page.locator('#teamwork').input_value()=='0'
-  page.reload();page.locator('[data-edit="0"]').click()
+  page.reload();page.locator('[data-open-player="0"]').click()
   assert page.locator('#teamwork').input_value()=='1'
   page.locator('#teamwork').fill('-1');page.locator('#cancelBtn').click()
   assert page.evaluate('players[0].teamwork')==1

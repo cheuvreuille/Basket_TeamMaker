@@ -33,7 +33,7 @@ try:
   # Explicit new fields take precedence over old compatibility fields; invalid/duplicate values are removed.
   upload([dict(v,positions=[5],primaryPosition='2',secondaryPositions=[2,1,'4',4,0,6,True,None,'<img>']) for v in legacy])
   assert page.evaluate('players.every(p=>p.primaryPosition===2&&JSON.stringify(p.secondaryPositions)==="[1,4]")')
-  page.locator('[data-edit="0"]').click()
+  page.locator('[data-open-player="0"]').click()
   assert page.locator('#primaryPosition').input_value()=='2'
   assert page.locator('#position_2').is_disabled()
   assert page.locator('#position_1').is_checked()
@@ -87,9 +87,10 @@ try:
   page.locator('#trainingTab').click()
   assert page.locator(f'[data-pres="{new_id}"]').is_checked()
   page.locator('#rosterTab').click()
+  page.locator(f'[data-open-player="{new_id}"]').click()
   page.remove_listener('dialog',dismiss)
   page.once('dialog',lambda dialog:dialog.accept())
-  page.locator(f'[data-delete="{new_id}"]').click()
+  page.locator('#deletePlayerBtn').click()
   assert page.locator('#roster .player').count()==10
   page.locator('#trainingTab').click()
   assert page.locator(f'[data-pres="{new_id}"]').count()==0

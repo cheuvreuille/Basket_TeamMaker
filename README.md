@@ -4,7 +4,7 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 
 ## Onglets de l’application
 
-- **Effectif** permet de gérer les fiches des joueurs.
+- **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique. La fiche affiche les participations et le taux de présence pour les jours sélectionnés dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers classés par nombre de séances jouées dans la même équipe.
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
 - **Match** est réservé à une future évolution.
 - **Statistique** donne accès au suivi des séances, aux présences et aux coéquipiers fréquents.
@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.0), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.0.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 

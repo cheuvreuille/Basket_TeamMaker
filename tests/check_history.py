@@ -32,7 +32,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.0'
+  assert page.locator('#appVersion').inner_text()=='Version 3.0.1'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
@@ -52,7 +52,7 @@ try:
   page.locator('#rosterTab').press('ArrowRight')
   assert page.locator('#trainingPanel').is_visible()
   assert page.locator('[role=tabpanel]:visible').count()==1
-  assert page.locator('#attendanceRoster [data-edit]').count()==0
+  assert page.locator('#attendanceRoster [data-open-player]').count()==0
   assert page.locator('#presentCount').inner_text()=='4 présents'
   page.locator('#noneBtn').click()
   assert page.locator('#presentCount').inner_text()=='0 présent'

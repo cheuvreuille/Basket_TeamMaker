@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 3.2.3 — 27 novembre 2026
+
+- Sur mobile, les noms des joueurs reviennent à la ligne et restent visibles pendant le défilement horizontal du classement des présences.
+- La fiche joueur affiche le total des participations à côté du nombre et du taux de présence par jour de la semaine.
+
 ## 3.2.2 — 27 novembre 2026
 
 - La vue **Coéquipiers les plus fréquents** reprend la disposition et le dégradé des liens de la carte globale. Les coéquipiers fréquents se rapprochent du joueur de référence.

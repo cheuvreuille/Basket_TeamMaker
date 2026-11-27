@@ -13,6 +13,14 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .ranking-sort [aria-hidden]::after{content:'↕'}
 .ranking-wrap th[aria-sort=ascending] .ranking-sort [aria-hidden]::after{content:'↑'}
 .ranking-wrap th[aria-sort=descending] .ranking-sort [aria-hidden]::after{content:'↓'}
+@media(max-width:780px){
+ .ranking-wrap{--player-name-width:clamp(8rem,40vw,12rem);scroll-padding-inline-start:var(--player-name-width)}
+ #historyPanel .ranking-wrap th,#historyPanel .ranking-wrap td{padding:8px 7px}
+ #historyPanel .ranking-wrap th:nth-child(2){
+  position:sticky;inset-inline-start:0;z-index:1;background:#fff;box-shadow:1px 0 #d7eaf4;
+  width:var(--player-name-width);min-width:var(--player-name-width);max-width:var(--player-name-width)
+ }
+}
 .teammate-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.teammate-controls>div{flex:1;min-width:180px}.teammate-controls select{width:100%}
 .teammate-graph{margin:16px 0}.teammate-node:hover circle,.teammate-node:focus-visible circle,.teammate-reference:focus-visible circle{stroke:#102d46;stroke-width:3}.teammate-table th:nth-child(1){white-space:normal!important;overflow-wrap:anywhere}
 .relationship-heading,.relationship-legend{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 22px}
@@ -53,6 +61,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .player-history h3{color:#075a80;margin:0 0 8px}
 .player-history dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:10px 0 14px;font-size:13px}
 .player-history dl div{padding:8px;background:white;border-radius:8px}
+.player-history dl .player-history-total{background:#dff6ff}
 .player-history dt{color:#547087}
 .player-history dd{margin:2px 0 0;font-weight:650}
 .player-history ol{margin:0;padding-left:22px;font-size:13px}
@@ -62,7 +71,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 #sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
 #sessionSaveDialog::backdrop{background:#102d4670}
 #sessionSaveDialog p{line-height:1.5}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.2.2</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.2.3</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -1159,8 +1168,9 @@ const historyStore=(()=>{
   const topTeammates=teammatesFor(id,participants).slice(0,5);
   const teammates=topTeammates.map(({name,count})=>`<li>${escapeHtml(name)} · ${count} séance${count>1?'s':''} ensemble</li>`).join('');
   const container=$('playerHistory');
-  container.innerHTML=`<h3>Présences par jour de la semaine</h3>
-   ${weekdayStats?`<dl>${weekdayStats}</dl>`:'<p class="muted">Choisissez les jours à afficher dans l’onglet « Configuration ».</p>'}
+  container.innerHTML=`<h3>Participations</h3>
+   <dl><div class="player-history-total"><dt>Total</dt><dd>${player.count}</dd></div>${weekdayStats}</dl>
+   ${weekdayStats?'':'<p class="muted">Choisissez les jours à afficher dans l’onglet « Configuration ».</p>'}
    <p class="muted"><strong>Dernière participation</strong> · ${lastDate}</p>
    <h3>Coéquipiers les plus fréquents</h3>
    ${teammates?`<ol>${teammates}</ol>`:'<p class="muted">Aucune séance partagée avec un coéquipier.</p>'}`;

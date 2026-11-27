@@ -4,7 +4,7 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 
 ## Onglets de l’application
 
-- **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique. La fiche affiche les participations et le taux de présence pour les jours sélectionnés dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers classés par nombre de séances jouées dans la même équipe.
+- **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique. La fiche affiche le total des participations, le nombre et le taux de présence pour chaque jour sélectionné dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers fréquents. Le total inclut tous les jours de la semaine.
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
 - **Match** est réservé à une future évolution.
 - **Statistique** donne accès au suivi des séances, aux présences, à la carte des relations et aux coéquipiers fréquents.
@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2.2), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2.3), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -80,7 +80,7 @@ L’onglet **Statistique** affiche :
 - Un tableau de classement des joueurs, du plus au moins présent, avec le rang et le nombre total de participations. Les égalités sont départagées par nom. Les joueurs actuels sans présence sont affichés à zéro ; les anciens participants restent visibles même s’ils ont quitté l’effectif. Les noms courants sont utilisés pour les joueurs de l’effectif, et les derniers noms enregistrés pour les autres. L’identité est suivie par identifiant de joueur, pas par nom.
 - Un éditeur de séance : sélection du jour, modification de la date, du nom historique des joueurs et de leur affectation ; ajout/retrait de participants depuis l’effectif ; ajout, renommage, changement de couleur ou suppression d’équipes ; suppression de la séance entière. Les modifications sont appliquées avec **Enregistrer les modifications**. Supprimer une équipe garde ses joueurs présents, sans affectation. Retirer un joueur ou supprimer une séance recalcule les graphiques.
 
-Le classement ajoute un pourcentage pour chaque jour affiché. Par exemple, trois participations sur quatre séances du mercredi donnent 75 %. Cliquez sur l’en-tête **Participations** ou sur un jour pour trier par cette colonne. Cliquez à nouveau pour inverser l’ordre. La moyenne et les pourcentages affichent un tiret pour les jours sans séance. Les sept jours sont affichés par défaut. La sélection dans **Configuration** s’applique au graphique, à sa légende, aux moyennes et aux colonnes de pourcentage. Elle est enregistrée dans le navigateur et restaurée à l’import d’une sauvegarde qui la contient.
+Le classement ajoute un pourcentage pour chaque jour affiché. Par exemple, trois participations sur quatre séances du mercredi donnent 75 %. Sur mobile, la colonne des noms reste visible lorsque vous faites défiler le tableau horizontalement. Cliquez sur l’en-tête **Participations** ou sur un jour pour trier par cette colonne. Cliquez à nouveau pour inverser l’ordre. La moyenne et les pourcentages affichent un tiret pour les jours sans séance. Les sept jours sont affichés par défaut. La sélection dans **Configuration** s’applique au graphique, à sa légende, aux moyennes et aux colonnes de pourcentage. Elle est enregistrée dans le navigateur et restaurée à l’import d’une sauvegarde qui la contient.
 
 Les corrections portent sur l’historique des séances. L’effectif, la sélection des présents et les compositions en cours se gèrent dans les onglets **Effectif** et **Entraînement**.
 

@@ -120,8 +120,8 @@ try:
   profile=page.locator('#playerHistory')
   assert card.get_attribute('aria-current')=='true'
   assert page.locator('#editorTitle').inner_text()=='Alex' and page.locator('#playerName').input_value()=='Alex'
-  assert profile.locator('dt').all_text_contents()==['Mardi','Mercredi']
-  assert [value.replace('\xa0',' ') for value in profile.locator('dd').all_text_contents()]==['1 (50 %)','1 (100 %)']
+  assert profile.locator('dt').all_text_contents()==['Total','Mardi','Mercredi']
+  assert [value.replace('\xa0',' ') for value in profile.locator('dd').all_text_contents()]==['3','1 (50 %)','1 (100 %)']
   assert profile.locator('time').get_attribute('datetime')=='2026-11-12'
   assert profile.locator('li').all_text_contents()==['Bob · 3 séances ensemble','Camille · 2 séances ensemble','Dany · 1 séance ensemble']
   page.locator('#playerName').fill('Alex Martin')
@@ -134,9 +134,11 @@ try:
   page.locator('#historyDay').select_option('s12')
   page.once('dialog',lambda dialog:dialog.accept());page.locator('#deleteSession').click()
   page.locator('#rosterTab').click()
+  assert profile.locator('.player-history-total dd').inner_text()=='2'
   assert profile.locator('time').get_attribute('datetime')=='2026-11-11'
   assert profile.locator('li').all_text_contents()==['Bob · 2 séances ensemble','Camille · 1 séance ensemble','Dany · 1 séance ensemble']
   page.locator('[data-open-player="f"]').click()
+  assert profile.locator('.player-history-total dd').inner_text()=='0'
   assert 'Aucune participation' in profile.inner_text() and profile.locator('li').count()==0
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
 

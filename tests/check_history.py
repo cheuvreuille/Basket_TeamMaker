@@ -34,7 +34,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.2.2'
+  assert page.locator('#appVersion').inner_text()=='Version 3.2.3'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
@@ -334,6 +334,12 @@ try:
   assert [len(team['playerIds']) for team in second_comp['teams']]==[6,6]
   assert page.locator('#attendanceData td').all_text_contents()==['27/11/2026','13']
   assert page.locator('#participationData tbody td:nth-child(3)').all_text_contents()==['1']*13
+  page.locator('#rosterTab').click()
+  page.locator('[data-open-player="m1"]').click()
+  profile=page.locator('#playerHistory')
+  assert profile.locator('.player-history-total dd').inner_text()=='1'
+  assert profile.locator('dl div').filter(has=page.get_by_text('Vendredi',exact=True)).locator('dd').inner_text().replace('\xa0',' ')=='1 (100 %)'
+  history()
   # Pairs count once per day even when they play in both compositions.
   def shared_pairs(composition):
    return {tuple(sorted((a,b))) for team in composition['teams'] for a in team['playerIds'] for b in team['playerIds'] if a!=b}
@@ -364,6 +370,26 @@ try:
   assert replacement['id']==first['id'] and len(replacement['players'])==12
   assert 'm0' not in [player['id'] for player in replacement['players']]
   assert [len(team['playerIds']) for team in replacement['compositions'][0]['teams']]==[6,6]
+  # Long names wrap and stay visible while reading the last weekday on narrow screens.
+  long_name='Alexandre Jean-Baptiste de La Rochefoucauld'
+  mobile_backup=export()
+  next(player for player in mobile_backup['players'] if player['id']=='m1')['name']=long_name
+  upload(mobile_backup)
+  history()
+  name_cell=ranking.locator('[data-ranking-player="m1"] th')
+  for width in [320,390]:
+   page.set_viewport_size(dict(width=width,height=860))
+   assert name_cell.inner_text()==long_name
+   assert name_cell.evaluate("""cell=>{
+    const range=document.createRange();
+    range.selectNodeContents(cell);
+    const lines=[...range.getClientRects()],bounds=cell.getBoundingClientRect();
+    return bounds.width>=128&&lines.length>1&&lines.every(line=>line.right<=bounds.right);
+   }""")
+   ranking.evaluate('table=>table.scrollLeft=table.scrollWidth')
+   assert ranking.evaluate('table=>table.scrollLeft>0')
+   assert abs(name_cell.bounding_box()['x']-ranking.bounding_box()['x'])<2
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

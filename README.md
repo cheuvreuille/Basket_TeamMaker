@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.0.2), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -67,7 +67,9 @@ Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les
 
 ## Statistique et suivi des séances
 
-Dans **Entraînement**, après une génération locale ou IA et les éventuels transferts, **Save** enregistre une séance datée du jour local du navigateur. Elle contient les joueurs présents, une copie de leurs profils, les équipes affichées, leurs couleurs et la version du moteur. Le bouton demande de régénérer les équipes si les présences ne correspondent plus à la composition affichée. Un second enregistrement le même jour propose de remplacer la séance ; chaque joueur ne participe donc qu’une fois par jour.
+Dans **Entraînement**, après une génération locale ou IA et les éventuels transferts, **Save** enregistre la composition dans la séance du jour. Si une séance existe déjà, **Ajouter à la séance** conserve ses compositions et réunit les listes de présents. **Remplacer la séance** conserve la composition et les présents actuels. Le bouton demande de régénérer les équipes si les présences actuelles diffèrent de la composition affichée.
+
+Dans **Statistique**, sélectionnez une date, puis la composition à consulter ou modifier. Chaque joueur compte une fois dans les présences du jour. Pour les coéquipiers fréquents, une paire compte une fois dès qu’elle a joué dans la même équipe dans au moins une composition de la séance.
 
 Dans **Statistique**, choisissez **Créer une séance manuellement**, renseignez la date et ajoutez les présents depuis l’effectif. Les équipes sont facultatives. Enregistrez la séance pour l’ajouter à l’historique et à l’export JSON. Si la date est déjà prise, ouvrez la séance existante pour la corriger.
 
@@ -95,13 +97,13 @@ L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et l
 }
 ```
 
-Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copies des participants), `teams` (`id`, `name`, `color`, `playerIds`), `bench` (présents non affectés), `source`, `engineVersion` et `manuallyEdited`. Les références aux joueurs sont propres aux copies de la séance : un joueur retiré plus tard de l’effectif reste dans l’historique. Une date ne peut contenir qu’une séance ; chaque participant ne peut être affecté qu’une fois.
+Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copies des participants) et `compositions`. Chaque composition contient ses propres équipes (`teams` avec `id`, `name`, `color` et `playerIds`), ses joueurs non affectés (`bench`) et ses informations de génération. Une date correspond à une séance. Un joueur peut être affecté une fois dans chacune de ses compositions. Un joueur retiré de l’effectif reste dans l’historique.
 
 - Les anciens tableaux de joueurs et les objets JSON sans `sessions` remplacent toujours l’effectif et **conservent l’historique local existant**.
 - Un objet avec `sessions` remplace l’effectif et l’historique après validation. `"sessions": []` vide explicitement l’historique.
 - `statisticsWeekdays` contient les jours sélectionnés, de `0` pour lundi à `6` pour dimanche. Une liste vide masque tous les jours. Un fichier sans ce champ conserve le réglage actuel.
 - Un historique ou une sélection de jours invalide bloque l’import entier.
-- Les anciennes versions de l’application peuvent encore lire `players`, mais ignorent `sessions` et ne le réexportent pas.
+- La version 3.1 relit les anciens fichiers et convertit les équipes de chaque séance en une composition. Pour restaurer un export contenant des compositions multiples, utilisez la version 3.1 ou une version ultérieure.
 
 Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de la clé existante des joueurs. Aucun serveur, compte ni service externe n’est nécessaire. Exportez régulièrement le JSON pour conserver une sauvegarde des deux ensembles de données.
 

@@ -41,7 +41,10 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .player-history li{padding:3px 0;overflow-wrap:anywhere}
 #editorTitle{overflow-wrap:anywhere}
 @media(max-width:480px){.main-tabs{gap:6px}.main-tabs button{padding:10px 12px}}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.0.2</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
+#sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
+#sessionSaveDialog::backdrop{background:#102d4670}
+#sessionSaveDialog p{line-height:1.5}
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.1</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -65,6 +68,16 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
   <section class="panel full" id="resultsSection"><div class="summary"><div><h2 style="margin-bottom:5px">Composition des équipes</h2><span class="muted" id="resultMeta">Sélectionnez les joueurs présents puis générez les équipes.</span></div><div class="results-actions"><button class="primary" id="saveSessionBtn" disabled>Save</button><button class="outline" id="copyBtn" disabled>Copier</button></div></div><p id="manualHelp" class="muted manual-help hidden">Pour ajuster les équipes, glissez un joueur vers une autre équipe ou utilisez son menu « Déplacer vers ». Les effectifs peuvent être modifiés librement.</p><div id="teams" class="teams"></div><div id="bench" style="margin-top:15px"></div><div id="notice" role="status"></div></section>
  </div>
 </section>
+<dialog id="sessionSaveDialog" aria-labelledby="sessionSaveTitle">
+ <h2 id="sessionSaveTitle">Une séance existe déjà</h2>
+ <p id="sessionSaveDetails"></p>
+ <p class="muted">Ajouter conserve les compositions et les présences déjà enregistrées. Remplacer enregistre uniquement la composition et les présences actuelles.</p>
+ <form method="dialog" class="actions">
+  <button class="primary" value="append" autofocus>Ajouter à la séance</button>
+  <button class="danger" value="replace">Remplacer la séance</button>
+  <button class="outline" value="cancel">Annuler</button>
+ </form>
+</dialog>
 <section id="matchPanel" role="tabpanel" aria-labelledby="matchTab" hidden></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="historyTab" hidden>
  <div class="grid history-grid">
@@ -497,7 +510,7 @@ const historyStore=(()=>{
  const weekdayIndex=day=>(new Date(day*DAY_MS).getUTCDay()+6)%7;
  const averageFormat=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
  const rateFormat=new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:1});
- let sessions=[],draft=null,blocked=false;
+ let sessions=[],draft=null,compositionId=null,blocked=false;
  let rankingColumn='count',rankingDirection='descending';
  const clone=value=>JSON.parse(JSON.stringify(value));
  const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('fr-FR');
@@ -532,30 +545,51 @@ const historyStore=(()=>{
   if(!p||typeof p.id!=='string'||!p.id||typeof p.name!=='string'||!p.name.trim()||!Number.isFinite(p.height)||!Number.isFinite(p.level))throw Error('Profil de joueur invalide dans une séance.');
   return {id:p.id,name:p.name.trim(),height:p.height,level:p.level,gender:normalizeGender(p.gender),teamwork:normalizeTeamwork(p.teamwork),...normalizePlayerPositions(p),skills:Object.fromEntries(SKILLS.map(([k])=>[k,Math.max(1,Math.min(5,Number(p.skills?.[k])||3))])),present:true};
  }
+ function normalizeComposition(composition,ids){
+  if(!composition||!Array.isArray(composition.teams))throw Error('Composition invalide.');
+  const assigned=new Set(),teamIds=new Set();
+  function claim(id){
+   if(typeof id!=='string'||!ids.has(id)||assigned.has(id))throw Error('Affectation de joueur invalide ou en double.');
+   assigned.add(id);
+   return id;
+  }
+  const teams=composition.teams.map((team,i)=>{
+   if(!team||typeof team.name!=='string'||!team.name.trim()||!Array.isArray(team.playerIds))throw Error('Équipe enregistrée invalide.');
+   const id=typeof team.id==='string'&&team.id?team.id:crypto.randomUUID();
+   if(teamIds.has(id))throw Error('Identifiant d’équipe en double.');
+   teamIds.add(id);
+   return {id,name:team.name.trim(),color:/^#[0-9a-f]{6}$/i.test(team.color)?team.color.toLowerCase():TEAM_PALETTE[i%TEAM_PALETTE.length][1],playerIds:team.playerIds.map(claim)};
+  });
+  if(!Array.isArray(composition.bench))throw Error('Liste des joueurs non affectés invalide.');
+  const bench=composition.bench.map(claim);
+  return {id:typeof composition.id==='string'&&composition.id?composition.id:crypto.randomUUID(),
+   savedAt:typeof composition.savedAt==='string'?composition.savedAt:null,teams,bench,
+   source:typeof composition.source==='string'?composition.source:'local',
+   engineVersion:typeof composition.engineVersion==='string'?composition.engineVersion:null,manuallyEdited:composition.manuallyEdited===true};
+ }
  function normalize(list){
   if(!Array.isArray(list))throw Error('Le champ sessions doit être une liste.');
   const dates=new Set(),sessionIds=new Set();
   return list.map(s=>{
-   if(!s||!validDate(s.date)||dates.has(s.date)||!Array.isArray(s.players)||!Array.isArray(s.teams))throw Error('Séance invalide ou date en double.');
+   if(!s||!validDate(s.date)||dates.has(s.date)||!Array.isArray(s.players))throw Error('Séance invalide ou date en double.');
    dates.add(s.date);
    const id=typeof s.id==='string'&&s.id?s.id:crypto.randomUUID();
-   if(sessionIds.has(id))throw Error('Identifiant de séance en double.');sessionIds.add(id);
+   if(sessionIds.has(id))throw Error('Identifiant de séance en double.');
+   sessionIds.add(id);
    const participants=s.players.map(snapshot),ids=new Set(participants.map(p=>p.id));
    if(ids.size!==participants.length)throw Error('Joueur en double dans une séance.');
-   const assigned=new Set(),teamIds=new Set();
-   const teams=s.teams.map((team,i)=>{
-    if(!team||typeof team.name!=='string'||!team.name.trim()||!Array.isArray(team.playerIds))throw Error('Équipe enregistrée invalide.');
-    const teamId=typeof team.id==='string'&&team.id?team.id:crypto.randomUUID();
-    if(teamIds.has(teamId))throw Error('Identifiant d’équipe en double.');teamIds.add(teamId);
-    const playerIds=team.playerIds.map(playerId=>{
-     if(typeof playerId!=='string'||!ids.has(playerId)||assigned.has(playerId))throw Error('Affectation de joueur invalide ou en double.');
-     assigned.add(playerId);return playerId;
-    });
-    return {id:teamId,name:team.name.trim(),color:/^#[0-9a-f]{6}$/i.test(team.color)?team.color.toLowerCase():TEAM_PALETTE[i%TEAM_PALETTE.length][1],playerIds};
-   });
-   const bench=participants.filter(p=>!assigned.has(p.id)).map(p=>p.id);
-   if(s.bench!==undefined&&(!Array.isArray(s.bench)||s.bench.length!==bench.length||new Set(s.bench).size!==s.bench.length||s.bench.some(id=>!bench.includes(id))))throw Error('Joueurs non affectés incohérents.');
-   return {id,date:s.date,savedAt:typeof s.savedAt==='string'?s.savedAt:s.date+'T12:00:00Z',players:participants,teams,bench,source:typeof s.source==='string'?s.source:'local',engineVersion:typeof s.engineVersion==='string'?s.engineVersion:null,manuallyEdited:s.manuallyEdited===true};
+   let records=s.compositions;
+   if(!Object.hasOwn(s,'compositions')){
+    if(!Array.isArray(s.teams))throw Error('Équipes enregistrées invalides.');
+    const members=new Set(s.teams.flatMap(team=>team?.playerIds??[]));
+    const bench=[...ids].filter(playerId=>!members.has(playerId));
+    if(s.bench!==undefined&&(!Array.isArray(s.bench)||s.bench.length!==bench.length||new Set(s.bench).size!==bench.length||s.bench.some(playerId=>!bench.includes(playerId))))throw Error('Joueurs non affectés incohérents.');
+    records=[{...s,bench}];
+   }
+   if(!Array.isArray(records)||!records.length)throw Error('Une séance doit contenir au moins une composition.');
+   const compositions=records.map(record=>normalizeComposition(record,ids));
+   if(new Set(compositions.map(record=>record.id)).size!==compositions.length)throw Error('Identifiant de composition en double.');
+   return {id,date:s.date,savedAt:typeof s.savedAt==='string'?s.savedAt:s.date+'T12:00:00Z',players:participants,compositions};
   }).sort((a,b)=>a.date.localeCompare(b.date));
  }
  function status(message){$('historyStatus').textContent=message}
@@ -591,16 +625,36 @@ const historyStore=(()=>{
    status(message+(hasWeekdays?' Jours des statistiques restaurés.':''));
   }
  }
- function saveToday(){
+ function saveToday(mode,date=today()){
   try{
    if(!lastResult)throw Error('Générez des équipes avant de les enregistrer.');
    const present=players.filter(p=>p.present),expected=new Set(present.map(p=>p.id)),assigned=[...lastResult.teams.flat(),...lastResult.bench];
    if(!present.length||expected.size!==present.length||assigned.length!==present.length||new Set(assigned).size!==assigned.length||assigned.some(id=>!expected.has(id)))throw Error('Les présences ont changé depuis la composition. Générez ou corrigez les équipes avant de les enregistrer.');
-   const date=today(),existing=sessions.find(s=>s.date===date);
-   if(existing&&!confirm('Une séance existe le '+dateLabel(date)+'. Remplacer ses présences et ses équipes par la composition actuelle ?'))return;
-   const session={id:existing?.id||crypto.randomUUID(),date,savedAt:new Date().toISOString(),players:present.map(snapshot),teams:lastResult.teams.map((ids,i)=>({id:crypto.randomUUID(),name:'Équipe '+(i+1),color:teamColors[i],playerIds:ids.slice()})),bench:lastResult.bench.slice(),source:lastResult.source,engineVersion:lastResult.engineVersion||null,manuallyEdited:lastResult.manuallyEdited===true};
-   commit([...sessions.filter(s=>s.date!==date),session],'Séance du '+dateLabel(date)+' enregistrée.',session.id);
-   $('notice').textContent='Séance du '+dateLabel(date)+' enregistrée dans l’onglet Statistique.';
+   const existing=sessions.find(session=>session.date===date);
+   if(existing&&!mode){
+    const dialog=$('sessionSaveDialog');
+    dialog.returnValue='cancel';
+    $('sessionSaveDetails').textContent=`Le ${dateLabel(date)} · ${existing.compositions.length} composition(s) enregistrée(s)`;
+    dialog.onclose=()=>{
+     if(dialog.returnValue==='append'||dialog.returnValue==='replace')saveToday(dialog.returnValue,date);
+    };
+    dialog.showModal();
+    return;
+   }
+   const savedAt=new Date().toISOString();
+   const composition={
+    id:crypto.randomUUID(),savedAt,bench:lastResult.bench.slice(),source:lastResult.source,
+    engineVersion:lastResult.engineVersion||null,manuallyEdited:lastResult.manuallyEdited===true,
+    teams:lastResult.teams.map((ids,i)=>({id:crypto.randomUUID(),name:'Équipe '+(i+1),color:teamColors[i],playerIds:ids.slice()}))
+   };
+   const append=mode==='append'&&existing;
+   const participants=new Map((append?existing.players:[]).map(player=>[player.id,player]));
+   present.forEach(player=>participants.set(player.id,snapshot(player)));
+   const session={id:existing?.id||crypto.randomUUID(),date,savedAt,players:[...participants.values()],
+    compositions:append?[...existing.compositions,composition]:[composition]};
+   commit([...sessions.filter(item=>item.date!==date),session],'Séance du '+dateLabel(date)+' enregistrée.',session.id);
+   if(draft?.id===session.id){compositionId=composition.id;renderEditor()}
+   $('notice').textContent=`Séance du ${dateLabel(date)} enregistrée · ${session.compositions.length} composition(s).`;
   }catch(error){$('notice').textContent='Enregistrement impossible : '+error.message}
  }
  const tabs=[...$('mainTabs').querySelectorAll('[role="tab"]')];
@@ -633,7 +687,7 @@ const historyStore=(()=>{
   openTab(tabs[next]);
   tabs[next].focus();
  });
- $('saveSessionBtn').onclick=saveToday;
+ $('saveSessionBtn').onclick=()=>saveToday();
  new MutationObserver(()=>$('saveSessionBtn').disabled=$('copyBtn').disabled).observe($('copyBtn'),{attributes:true,attributeFilter:['disabled']});
  function calendarDividers(firstDay,lastDay,x,top,bottom,plotWidth){
   // Keep grid lines readable when the date range is wider than the available pixels.
@@ -707,11 +761,13 @@ const historyStore=(()=>{
  function teammatesFor(reference,participants){
   const counts=new Map();
   for(const session of sessions){
-   const team=session.teams.find(team=>team.playerIds.includes(reference));
-   if(!team)continue;
-   for(const id of team.playerIds){
-    if(id!==reference)counts.set(id,(counts.get(id)||0)+1);
+   const teammates=new Set();
+   for(const composition of session.compositions){
+    const team=composition.teams.find(team=>team.playerIds.includes(reference));
+    if(!team)continue;
+    for(const id of team.playerIds)if(id!==reference)teammates.add(id);
    }
+   for(const id of teammates)counts.set(id,(counts.get(id)||0)+1);
   }
   return [...counts].map(([id,count])=>({id,count,name:participants.get(id)?.name??'Joueur inconnu'}))
    .sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
@@ -847,7 +903,7 @@ const historyStore=(()=>{
  window.addEventListener('resize',()=>{if(!$('historyPanel').hidden)renderCharts()});
  function refresh(selected=$('historyDay').value){
   renderCharts();
-  $('historyDay').innerHTML=sessions.length?sessions.slice().reverse().map(s=>`<option value="${escapeHtml(s.id)}">${dateLabel(s.date)} · ${s.players.length} présents</option>`).join(''):'<option value="">Aucune séance</option>';
+  $('historyDay').innerHTML=sessions.length?sessions.slice().reverse().map(s=>`<option value="${escapeHtml(s.id)}">${dateLabel(s.date)} · ${s.players.length} présents · ${s.compositions.length} composition(s)</option>`).join(''):'<option value="">Aucune séance</option>';
   if(sessions.some(s=>s.id===selected))$('historyDay').value=selected;
   selectDay();
  }
@@ -855,7 +911,8 @@ const historyStore=(()=>{
  function selectDay(){draft=clone(sessions.find(s=>s.id===$('historyDay').value)||null);renderEditor()}
  $('historyDay').onchange=()=>{status('');selectDay()};
  $('newManualSession').onclick=()=>{
-  draft={id:crypto.randomUUID(),date:today(),players:[],teams:[],bench:[],source:'manual',engineVersion:null,manuallyEdited:true};
+  const composition={id:crypto.randomUUID(),teams:[],bench:[],source:'manual',engineVersion:null,manuallyEdited:true};
+  draft={id:crypto.randomUUID(),date:today(),players:[],compositions:[composition]};
   status('');renderEditor();$('sessionDate').focus();
  };
  function saveHistoryDraft(){
@@ -872,41 +929,64 @@ const historyStore=(()=>{
    $('historyDay').focus();
   }catch(error){status((creating?'Création impossible : ':'Modification impossible : ')+error.message)}
  }
- function assign(id,teamId){
-  draft.teams.forEach(team=>team.playerIds=team.playerIds.filter(p=>p!==id));draft.bench=draft.bench.filter(p=>p!==id);
-  const team=draft.teams.find(team=>team.id===teamId);if(team)team.playerIds.push(id);else draft.bench.push(id);
+ function assign(composition,id,teamId){
+  for(const team of composition.teams)team.playerIds=team.playerIds.filter(playerId=>playerId!==id);
+  composition.bench=composition.bench.filter(playerId=>playerId!==id);
+  if(teamId==='')composition.bench.push(id);
+  else composition.teams.find(team=>team.id===teamId)?.playerIds.push(id);
  }
  function renderEditor(){
   const creating=isNewSession();
   $('historyDay').disabled=creating||sessions.length===0;
   $('newManualSession').disabled=creating;
   if(!draft){$('sessionEditor').innerHTML='<p class="history-empty">Créez une séance pour commencer à suivre les présences.</p>';return}
-  const teamOptions=id=>'<option value="">Non affecté</option>'+draft.teams.map(team=>`<option value="${escapeHtml(team.id)}" ${team.playerIds.includes(id)?'selected':''}>${escapeHtml(team.name)}</option>`).join('');
+  const composition=draft.compositions.find(item=>item.id===compositionId)||draft.compositions.at(-1);
+  compositionId=composition.id;
+  const teamOptions=id=>{
+   const team=composition.teams.find(item=>item.playerIds.includes(id));
+   const unassigned=composition.bench.includes(id);
+   return `<option value="outside" data-outside ${!team&&!unassigned?'selected':''}>Hors de cette composition</option>
+    <option value="" ${unassigned?'selected':''}>Non affecté</option>`+composition.teams.map(item=>`<option value="${escapeHtml(item.id)}" ${item===team?'selected':''}>${escapeHtml(item.name)}</option>`).join('');
+  };
   const presentIds=new Set(draft.players.map(p=>p.id));
   const available=players.filter(p=>!presentIds.has(p.id)).sort(comparePlayerNames);
   $('sessionEditor').innerHTML=`
    ${creating?'<h3>Nouvelle séance</h3><p class="muted">Choisissez la date, puis ajoutez les joueurs présents. Les équipes sont facultatives.</p>':''}
    <div class="history-actions"><div><label for="sessionDate">Date de la séance</label><input id="sessionDate" type="date" value="${draft.date}"></div><button id="saveHistoryEdits" class="primary">${creating?'Enregistrer la séance':'Enregistrer les modifications'}</button>${creating?'<button id="cancelManualSession" class="outline">Annuler</button>':'<button id="deleteSession" class="danger">Supprimer la séance</button>'}</div>
-   <h3>Équipes enregistrées</h3><p class="muted">Supprimer une équipe garde ses joueurs comme présents, mais non affectés.</p>
-   <div class="history-team-list">${draft.teams.map(team=>`<div class="history-team-edit" data-history-team="${escapeHtml(team.id)}"><label>Nom de l’équipe<input class="history-team-name" maxlength="80" value="${escapeHtml(team.name)}"></label><label>Couleur<input class="history-team-color" type="color" value="${team.color}"></label><span class="muted">${team.playerIds.length} joueurs</span><button class="danger history-delete-team">Supprimer l’équipe</button></div>`).join('')}</div>
+   ${draft.compositions.length>1?`<div class="history-actions"><div><label for="historyComposition">Composition de la séance</label><select id="historyComposition">${draft.compositions.map((item,index)=>`<option value="${escapeHtml(item.id)}" ${item===composition?'selected':''}>Composition ${index+1} · ${item.teams.length} équipe(s)</option>`).join('')}</select></div></div>`:''}
+   <h3>Équipes enregistrées</h3><p class="muted">Supprimer une équipe garde ses joueurs comme présents, mais non affectés dans cette composition.</p>
+   <div class="history-team-list">${composition.teams.map(team=>`<div class="history-team-edit" data-history-team="${escapeHtml(team.id)}"><label>Nom de l’équipe<input class="history-team-name" maxlength="80" value="${escapeHtml(team.name)}"></label><label>Couleur<input class="history-team-color" type="color" value="${team.color}"></label><span class="muted">${team.playerIds.length} joueurs</span><button class="danger history-delete-team">Supprimer l’équipe</button></div>`).join('')}</div>
    <button id="addHistoryTeam" class="outline">Ajouter une équipe</button><div class="divider"></div>
    <h3>Joueurs présents ce jour</h3><div class="history-player-list">${draft.players.map(p=>`<div class="history-player-edit" data-history-player="${escapeHtml(p.id)}"><label>Nom du joueur<input class="history-player-name" maxlength="70" value="${escapeHtml(p.name)}"></label><label>Équipe<select class="history-assignment">${teamOptions(p.id)}</select></label><button class="danger history-delete-player">Retirer de la séance</button></div>`).join('')}</div>
    <div class="history-actions"><div><label for="historyAddPlayer">Ajouter un présent depuis l’effectif</label><select id="historyAddPlayer"><option value="">Choisir un joueur</option>${available.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select></div><button id="addHistoryPlayer" class="outline" ${available.length?'':'disabled'}>Ajouter le joueur</button></div>`;
   $('sessionDate').oninput=e=>draft.date=e.target.value;
+  const compositionSelect=$('historyComposition');
+  if(compositionSelect)compositionSelect.onchange=event=>{
+   compositionId=event.target.value;
+   renderEditor();$('historyComposition').focus();
+  };
   $('sessionEditor').querySelectorAll('[data-history-player]').forEach(row=>{
    const id=row.dataset.historyPlayer;
    row.querySelector('.history-player-name').oninput=e=>draft.players.find(p=>p.id===id).name=e.target.value;
-   row.querySelector('.history-assignment').onchange=e=>{assign(id,e.target.value);renderEditor()};
-   row.querySelector('.history-delete-player').onclick=()=>{draft.players=draft.players.filter(p=>p.id!==id);assign(id,'');draft.bench=draft.bench.filter(p=>p!==id);renderEditor()};
+   row.querySelector('.history-assignment').onchange=event=>{
+    const select=event.target;
+    assign(composition,id,select.selectedOptions[0].hasAttribute('data-outside')?undefined:select.value);
+    renderEditor();
+   };
+   row.querySelector('.history-delete-player').onclick=()=>{
+    draft.players=draft.players.filter(p=>p.id!==id);
+    for(const item of draft.compositions)assign(item,id,undefined);
+    renderEditor();
+   };
   });
   $('sessionEditor').querySelectorAll('[data-history-team]').forEach(row=>{
-   const id=row.dataset.historyTeam,team=draft.teams.find(team=>team.id===id);
+   const id=row.dataset.historyTeam,team=composition.teams.find(team=>team.id===id);
    row.querySelector('.history-team-name').oninput=e=>{team.name=e.target.value;$('sessionEditor').querySelectorAll('.history-assignment option').forEach(option=>{if(option.value===id)option.textContent=team.name})};
    row.querySelector('.history-team-color').oninput=e=>team.color=e.target.value;
-   row.querySelector('.history-delete-team').onclick=()=>{draft.bench.push(...team.playerIds);draft.teams=draft.teams.filter(t=>t.id!==id);renderEditor()};
+   row.querySelector('.history-delete-team').onclick=()=>{composition.bench.push(...team.playerIds);composition.teams=composition.teams.filter(t=>t.id!==id);renderEditor()};
   });
-  $('addHistoryTeam').onclick=()=>{draft.teams.push({id:crypto.randomUUID(),name:'Équipe '+(draft.teams.length+1),color:TEAM_PALETTE[draft.teams.length%TEAM_PALETTE.length][1],playerIds:[]});renderEditor()};
-  $('addHistoryPlayer').onclick=()=>{const p=players.find(p=>p.id===$('historyAddPlayer').value);if(p&&!draft.players.some(recorded=>recorded.id===p.id)){draft.players.push(snapshot(p));draft.bench.push(p.id);renderEditor()}};
+  $('addHistoryTeam').onclick=()=>{composition.teams.push({id:crypto.randomUUID(),name:'Équipe '+(composition.teams.length+1),color:TEAM_PALETTE[composition.teams.length%TEAM_PALETTE.length][1],playerIds:[]});renderEditor()};
+  $('addHistoryPlayer').onclick=()=>{const p=players.find(p=>p.id===$('historyAddPlayer').value);if(p&&!draft.players.some(recorded=>recorded.id===p.id)){draft.players.push(snapshot(p));composition.bench.push(p.id);renderEditor()}};
   $('saveHistoryEdits').onclick=saveHistoryDraft;
   if(creating){
    $('cancelManualSession').onclick=()=>{status('');selectDay();$('newManualSession').focus()};

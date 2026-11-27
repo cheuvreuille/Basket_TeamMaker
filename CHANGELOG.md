@@ -1,5 +1,11 @@
 # Historique des versions
 
+## 3.1 — 27 novembre 2026
+
+- Plusieurs compositions peuvent être enregistrées pour une même séance. **Save** permet d’ajouter une composition ou de remplacer la séance du jour.
+- Le suivi des séances permet de consulter et modifier chaque composition. Les présences et les coéquipiers restent comptés une fois par jour.
+- Les anciennes séances s’ouvrent avec une composition et restent importables.
+
 ## 3.0.2 — 22 novembre 2026
 
 - Nouveaux libellés « Moins de passe » et « Trop de passe » pour le jeu en équipe.

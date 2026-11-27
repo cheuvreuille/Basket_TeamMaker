@@ -32,7 +32,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.0.2'
+  assert page.locator('#appVersion').inner_text()=='Version 3.1'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
@@ -72,14 +72,18 @@ try:
   saved=records()
   assert len(saved)==1 and saved[0]['date']=='2026-11-20' # Local day, not UTC.
   first_id=saved[0]['id']
-  assert saved[0]['teams'][0]['color']=='#ff8800'
-  assert [t['playerIds'] for t in saved[0]['teams']]==result['teams']
-  assert saved[0]['engineVersion']=='3.0' and saved[0]['manuallyEdited']
+  assert saved[0]['compositions'][0]['teams'][0]['color']=='#ff8800'
+  assert [t['playerIds'] for t in saved[0]['compositions'][0]['teams']]==result['teams']
+  assert saved[0]['compositions'][0]['engineVersion']=='3.0' and saved[0]['compositions'][0]['manuallyEdited']
   assert len(saved[0]['players'])==4
   # Repeated saves never double count a day; dismissal preserves the original.
-  page.once('dialog',lambda d:d.dismiss());page.locator('#saveSessionBtn').click()
+  save_dialog=page.locator('#sessionSaveDialog')
+  page.locator('#saveSessionBtn').click()
+  save_dialog.get_by_role('button',name='Annuler').click()
   assert records()==saved
-  page.once('dialog',lambda d:d.accept());page.locator('#saveSessionBtn').click()
+  page.locator('#saveSessionBtn').click()
+  save_dialog.get_by_role('button',name='Remplacer la séance').click()
+  page.wait_for_function("(old)=>JSON.parse(localStorage.getItem('basket-sessions-v2'))[0].compositions[0].id!==old",arg=saved[0]['compositions'][0]['id'])
   assert len(records())==1 and records()[0]['id']==first_id
   history()
   assert page.locator('#attendanceChart svg').count()==1
@@ -114,7 +118,7 @@ try:
   assert page.evaluate('JSON.stringify(players)')==current_roster
   assert page.evaluate('JSON.stringify(lastResult)')==current_result
   first=next(s for s in records() if s['id']==first_id)
-  assert len(first['players'])==3 and first['teams'][0]['name']=='Les Bleus'
+  assert len(first['players'])==3 and first['compositions'][0]['teams'][0]['name']=='Les Bleus'
   assert next(p for p in first['players'] if p['id']=='p0')['name']=='Nom historique'
   assert page.locator('#attendanceData tbody tr').first.locator('td').all_text_contents()==['20/11/2026','3']
   assert page.locator('[data-ranking-player="p1"] td:nth-child(3)').text_content()=='1'
@@ -122,8 +126,8 @@ try:
   # Remove a team: participants remain present and become unassigned.
   page.locator('.history-delete-team').first.click();page.locator('#saveHistoryEdits').click()
   first=next(s for s in records() if s['id']==first_id)
-  assert len(first['teams'])==1 and len(first['players'])==3
-  assert first['bench']
+  assert len(first['compositions'][0]['teams'])==1 and len(first['players'])==3
+  assert first['compositions'][0]['bench']
   page.locator('#addHistoryTeam').click()
   page.locator('#historyAddPlayer').select_option('p4');page.locator('#addHistoryPlayer').click()
   team_id=page.locator('[data-history-player="p4"] .history-assignment option').last.get_attribute('value')
@@ -131,7 +135,7 @@ try:
   page.locator('#saveHistoryEdits').click()
   first=next(s for s in records() if s['id']==first_id)
   assert len(first['players'])==4
-  assert 'p4' in next(t for t in first['teams'] if t['id']==team_id)['playerIds']
+  assert 'p4' in next(t for t in first['compositions'][0]['teams'] if t['id']==team_id)['playerIds']
   # Collision on changing date is rejected without modifying stored data.
   before=records();page.locator('#sessionDate').fill('2026-11-21');page.locator('#saveHistoryEdits').click()
   assert records()==before and 'date en double' in page.locator('#historyStatus').inner_text()
@@ -147,7 +151,7 @@ try:
   assert records()==history_before and page.evaluate('players.length')==6
   # Malformed history must not partially import the roster.
   bad=json.loads(json.dumps(package));bad['players']=roster[:1]
-  bad['sessions'][0]['teams'][0]['playerIds'].append('unknown')
+  bad['sessions'][0]['compositions'][0]['teams'][0]['playerIds'].append('unknown')
   alerts=[]
   page.once('dialog',lambda d:(alerts.append(d.message),d.dismiss()))
   upload(bad)
@@ -205,8 +209,8 @@ try:
   assert page.locator('#sessionDate').input_value()=='2026-11-25'
   page.locator('#saveHistoryEdits').click()
   manual=records()[-1]
-  assert manual['date']=='2026-11-25' and manual['source']=='manual'
-  assert manual['teams']==[] and manual['bench']==['p1']
+  assert manual['date']=='2026-11-25' and manual['compositions'][0]['source']=='manual'
+  assert manual['compositions'][0]['teams']==[] and manual['compositions'][0]['bench']==['p1']
   assert page.locator('#historyDay').input_value()==manual['id']
   assert page.locator('#weekdayAttendance tbody tr').evaluate_all('(rows)=>rows.map(row=>Array.from(row.cells,cell=>cell.textContent))')==[['Mercredi','4','1,5'],['Dimanche','0','—']]
   assert page.locator('#participationData thead th').all_text_contents()==['Rang','Joueur','Participations','Mercredi (%)','Dimanche (%)']
@@ -304,6 +308,60 @@ try:
   upload(dict(weekday_backup,statisticsWeekdays=[]))
   assert export()['statisticsWeekdays']==[] and 'Choisissez les jours' in chart.inner_text()
   assert chart.locator('[data-legend-weekday]').count()==0
+  # The same day can retain distinct three-team and two-team compositions.
+  multi_roster=[dict(id=f'm{i}',name=f'Joueur {i}',height=180,level=3,positions=[1],present=i<12) for i in range(13)]
+  upload(dict(players=multi_roster,sessions=[],statisticsWeekdays=list(range(7))))
+  page.clock.set_fixed_time(datetime(2026,11,27,10,tzinfo=timezone.utc))
+  training()
+  page.locator('#teamCount').select_option('3')
+  page.locator('#generateBtn').click();page.locator('#saveSessionBtn').click()
+  first=records()[0]
+  first_comp=first['compositions'][0]
+  assert [len(team['playerIds']) for team in first_comp['teams']]==[4,4,4]
+  page.locator('[data-pres="m0"]').uncheck();page.locator('[data-pres="m12"]').check()
+  page.locator('#teamCount').select_option('2')
+  page.locator('#generateBtn').click();page.locator('#saveSessionBtn').click()
+  save_dialog.get_by_role('button',name='Ajouter à la séance').click()
+  page.wait_for_function("JSON.parse(localStorage.getItem('basket-sessions-v2'))[0].compositions.length===2")
+  history()
+  assert len(records())==1
+  combined=records()[0]
+  assert combined['id']==first['id'] and len(combined['players'])==13
+  assert combined['compositions'][0]==first_comp
+  second_comp=combined['compositions'][1]
+  assert [len(team['playerIds']) for team in second_comp['teams']]==[6,6]
+  assert page.locator('#attendanceData td').all_text_contents()==['27/11/2026','13']
+  assert page.locator('#participationData tbody td:nth-child(3)').all_text_contents()==['1']*13
+  # Pairs count once per day even when they play in both compositions.
+  def shared_pairs(composition):
+   return {tuple(sorted((a,b))) for team in composition['teams'] for a in team['playerIds'] for b in team['playerIds'] if a!=b}
+  first_pairs,second_pairs=shared_pairs(first_comp),shared_pairs(second_comp)
+  reference,_=next(iter(first_pairs & second_pairs))
+  expected={id for pair in first_pairs | second_pairs if reference in pair for id in pair if id!=reference}
+  page.locator('#teammateReference').select_option(reference)
+  assert set(page.locator('#teammateData tbody tr').evaluate_all('(rows)=>rows.map(row=>row.dataset.teammateId)'))==expected
+  assert page.locator('#teammateData tbody td').all_text_contents()==['1']*len(expected)
+  # History can edit either composition independently and export both together.
+  selector=page.locator('#historyComposition')
+  assert selector.input_value()==second_comp['id']
+  selector.select_option(first_comp['id'])
+  assert page.locator('[data-history-player="m12"] .history-assignment').input_value()=='outside'
+  page.locator('.history-team-name').first.fill('Premier groupe')
+  selector.select_option(second_comp['id'])
+  assert page.locator('.history-team-name').first.input_value()=='Équipe 1'
+  page.locator('#saveHistoryEdits').click()
+  edited=records()[0]
+  assert edited['compositions'][0]['teams'][0]['name']=='Premier groupe' and edited['compositions'][1]==second_comp
+  upload(export())
+  assert records()==[edited]
+  training()
+  page.locator('#saveSessionBtn').click()
+  save_dialog.get_by_role('button',name='Remplacer la séance').click()
+  page.wait_for_function("JSON.parse(localStorage.getItem('basket-sessions-v2'))[0].compositions.length===1")
+  replacement=records()[0]
+  assert replacement['id']==first['id'] and len(replacement['players'])==12
+  assert 'm0' not in [player['id'] for player in replacement['players']]
+  assert [len(team['playerIds']) for team in replacement['compositions'][0]['teams']]==[6,6]
   assert not errors,errors
   browser.close()
 finally:server.shutdown()

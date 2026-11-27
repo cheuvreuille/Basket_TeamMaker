@@ -1,6 +1,7 @@
 """Run: python3 tests/check_teammates.py (Playwright and Chromium)."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from math import dist
 from pathlib import Path
 from threading import Thread
 import json
@@ -139,8 +140,15 @@ try:
   assert graph.get_by_role('button').count()==6 and graph.locator('line').count()==6
   assert float(alex.locator('circle').get_attribute('r'))>float(fran.locator('circle').get_attribute('r'))
   strong=graph.locator('line').filter(has_text='Alex et Bob')
+  medium=graph.locator('line').filter(has_text='Alex et Camille')
   weak=graph.locator('line').filter(has_text='Alex et Dany')
+  def length(line):
+   def point(index):
+    return [float(line.get_attribute(axis+str(index))) for axis in ('x','y')]
+   return dist(point(1),point(2))
   assert '3 compositions' in strong.locator('title').text_content()
+  original_length=length(strong)
+  assert original_length<length(medium)<length(weak)
   assert float(strong.get_attribute('stroke-width'))>float(weak.get_attribute('stroke-width'))
   assert strong.get_attribute('stroke')!=weak.get_attribute('stroke')
   alex.press('Enter')
@@ -162,6 +170,7 @@ try:
   day.select_option('0')
   assert 'Aucune présence' in graph.inner_text() and not graph.locator('svg').count()
   day.select_option('all')
+  assert length(strong)==original_length
   page.locator('#historyDay').select_option('s10')
   page.locator('[data-history-player="b"] .history-assignment').select_option('t1')
   page.locator('#saveHistoryEdits').click()
@@ -173,6 +182,9 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   upload(large)
   assert graph.get_by_role('button').count()==25 and graph.locator('line').count()==300
+  assert graph.locator('circle').evaluate_all("""circles => circles.every((circle, i) =>
+   circles.slice(i+1).every(other => Math.hypot(circle.cx.baseVal.value-other.cx.baseVal.value,
+    circle.cy.baseVal.value-other.cy.baseVal.value) >= circle.r.baseVal.value+other.r.baseVal.value))""")
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   upload(hostile)
   assert graph.locator('img,script').count()==0 and not page.evaluate('window.bad||false')

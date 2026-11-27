@@ -24,6 +24,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .relationship-link.is-selected{stroke-opacity:1}
 .relationship-link.is-muted{stroke-opacity:.06}
 .relationship-node{cursor:pointer;outline:none}
+.relationship-name{paint-order:stroke;stroke:#f7fcff;stroke-width:4px;stroke-linejoin:round}
 .relationship-node.is-muted{opacity:.28}
 .relationship-node:hover,.relationship-node:focus-visible{opacity:1}
 .relationship-node:focus-visible circle,.relationship-node:hover circle,.relationship-node[aria-pressed=true] circle{stroke:#102d46;stroke-width:3}
@@ -60,7 +61,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 #sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
 #sessionSaveDialog::backdrop{background:#102d4670}
 #sessionSaveDialog p{line-height:1.5}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.2</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-label="Val de Seine Basket">VSB</div><div><h1>Val de Seine Basket</h1><div class="sub">Équipes équilibrées · Gérez les présences et composez vos équipes.<br><span class="pill version" id="appVersion">Version 3.2.1</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter joueurs</button><button class="outline" id="importBtn">Importer</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -112,7 +113,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
     <span><i class="relationship-scale" aria-hidden="true"></i> Traits · Compositions dans la même équipe</span>
    </p>
    <div id="relationshipGraph" class="relationship-graph" role="region" aria-labelledby="relationshipHeading" tabindex="0"></div>
-   <p id="relationshipHelp" class="muted" hidden>Sélectionnez un joueur pour mettre en évidence ses liens et afficher leurs totaux.</p>
+   <p id="relationshipHelp" class="muted" hidden>La disposition rapproche les coéquipiers fréquents. Sélectionnez un joueur pour afficher les totaux de ses liens.</p>
    <div class="relationship-details">
     <strong id="relationshipSelection" role="status"></strong>
     <ul id="relationshipPartners" hidden></ul>
@@ -859,6 +860,98 @@ const historyStore=(()=>{
   return [...links.values()].sort((a,b)=>a.count-b.count);
  }
 
+ function layoutRelationships(nodes,links){
+  const columns=Math.ceil(Math.sqrt(nodes.length*1.45));
+  const maxAttendance=nodes.reduce((max,p)=>Math.max(max,p.count),0);
+  const measure=document.createElement('canvas').getContext('2d');
+  measure.font='13px '+getComputedStyle(document.documentElement).fontFamily;
+  const positions=nodes.map((p,index)=>{
+   const name=[...p.name];
+   const shortName=name.length>15?name.slice(0,14).join('')+'…':p.name;
+   const radius=Math.sqrt(100+576*p.count/maxAttendance);
+   const halfWidth=Math.max(radius,measure.measureText(shortName).width/2);
+   const column=index%columns,row=Math.floor(index/columns);
+   return {x:110*column+20*(row%2),y:92*row+18*(column%2),radius,halfWidth,shortName,fx:0,fy:0};
+  });
+  const degree=nodes.map(()=>0);
+  for(const {first,second} of links){
+   degree[first]++;
+   degree[second]++;
+  }
+  const springs=links.map(({first,second,strength})=>({
+   a:positions[first],b:positions[second],
+   length:176-86*strength,
+   stiffness:(.16+.09*strength)/Math.sqrt(Math.max(degree[first],degree[second]))
+  }));
+
+  function separatePlayers(){
+   let moved=false;
+   for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++){
+    const a=positions[i],b=positions[j],dx=b.x-a.x,dy=b.y-a.y;
+    const overlapX=a.halfWidth+b.halfWidth+10-Math.abs(dx);
+    const overlapY=a.radius+b.radius+30-Math.abs(dy);
+    if(overlapX<=.5||overlapY<=.5)continue;
+    if(overlapX<overlapY){
+     const shift=Math.sign(dx||1)*overlapX/2;
+     a.x-=shift;b.x+=shift;
+    }else{
+     const shift=Math.sign(dy||1)*overlapY/2;
+     a.y-=shift;b.y+=shift;
+    }
+    moved=true;
+   }
+   return moved;
+  }
+  // Balance desired link lengths with the space needed for circles and names.
+  const centerX=positions.reduce((sum,p)=>sum+p.x,0)/positions.length;
+  const centerY=positions.reduce((sum,p)=>sum+p.y,0)/positions.length;
+  for(let iteration=0;iteration<100&&springs.length;iteration++){
+   for(const p of positions){
+    p.fx=(centerX-p.x)*.015;
+    p.fy=(centerY-p.y)*.015;
+   }
+   for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++){
+    const a=positions[i],b=positions[j],dx=b.x-a.x,dy=b.y-a.y;
+    const distance=Math.hypot(dx,dy)||1;
+    const repel=2200/(distance+20)**1.55/distance;
+    const x=dx*repel,y=dy*repel;
+    a.fx-=x;a.fy-=y;
+    b.fx+=x;b.fy+=y;
+   }
+   for(const {a,b,length,stiffness} of springs){
+    const dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy)||1;
+    const force=stiffness*(distance-length)/distance;
+    a.fx+=dx*force;a.fy+=dy*force;
+    b.fx-=dx*force;b.fy-=dy*force;
+   }
+   const step=1-iteration/125;
+   for(const p of positions){
+    const scale=step*Math.min(1,20/(Math.hypot(p.fx,p.fy)||1));
+    p.x+=p.fx*scale;
+    p.y+=p.fy*scale;
+   }
+   separatePlayers();
+  }
+  // Give spacing priority once the layout has settled.
+  for(let pass=0;pass<Math.min(100,2*nodes.length);pass++){
+   if(!separatePlayers())break;
+  }
+
+  let left=Infinity,right=-Infinity,top=Infinity,bottom=-Infinity;
+  for(const p of positions){
+   left=Math.min(left,p.x-p.halfWidth);
+   right=Math.max(right,p.x+p.halfWidth);
+   top=Math.min(top,p.y-p.radius);
+   bottom=Math.max(bottom,p.y+p.radius+22);
+  }
+  const width=Math.max(330,Math.ceil(right-left+48)),height=Math.max(190,Math.ceil(bottom-top+48));
+  for(const p of positions){
+   p.x+=(width-left-right)/2;
+   p.y+=(height-top-bottom)/2;
+  }
+  return {positions,width,height};
+ }
+
  function renderRelationships(participants){
   const day=relationshipWeekday.value==='all'?null:Number(relationshipWeekday.value);
   const nodes=[...participants.values()].map(p=>({id:p.id,name:p.name,count:day===null?p.count:p.byDay[day]}))
@@ -879,40 +972,24 @@ const historyStore=(()=>{
    return;
   }
 
-  const orbit=nodes.length===1?0:Math.max(85,nodes.length*66/(2*Math.PI));
-  const center=orbit+137,size=center*2;
-  const maxAttendance=nodes.reduce((max,p)=>Math.max(max,p.count),0);
-  const positions=nodes.map((p,i)=>{
-   const angle=(nodes.length===2?0:-Math.PI/2)+2*Math.PI*i/nodes.length;
-   const x=center+Math.cos(angle)*orbit,y=center+Math.sin(angle)*orbit;
-   const radius=Math.sqrt(100+576*p.count/maxAttendance);
-   return {x,y,radius,angle};
-  });
   const maxLink=links.at(-1)?.count??1;
-  const linkMarkup=links.map(({first,second,count})=>{
+  for(const link of links)link.strength=(link.count-1)/Math.max(1,maxLink-1);
+  const {positions,width,height}=layoutRelationships(nodes,links);
+  const linkMarkup=links.map(({first,second,count,strength})=>{
    const from=positions[first],to=positions[second];
-   const strength=(count-1)/Math.max(1,maxLink-1);
    const color=[124,168,196].map((c,i)=>Math.round(c+([20,65,128][i]-c)*strength));
    const label=`${nodes[first].name} et ${nodes[second].name} · ${count} composition${count===1?'':'s'} dans la même équipe`;
    return `<line class="relationship-link" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="rgb(${color.join(',')})" stroke-width="${1.4+4.6*strength}" stroke-linecap="round"><title>${escapeHtml(label)}</title></line>`;
   }).join('');
   const nodeMarkup=nodes.map((p,i)=>{
-   const {x,y,radius,angle}=positions[i];
-   const flip=Math.cos(angle)<-1e-6;
-   const degrees=angle*180/Math.PI+(flip?180:0);
-   const name=[...p.name];
-   const shortName=name.length>15?name.slice(0,14).join('')+'…':p.name;
+   const {x,y,radius,shortName}=positions[i];
    const label=`${p.name} · ${p.count} séance${p.count===1?'':'s'}`;
-   const vertical=Math.abs(Math.cos(angle))<1e-6;
-   const labelY=y+(radius+15)*(nodes.length>1&&Math.sin(angle)<0?-1:1);
-   const nameMarkup=vertical
-    ?`<text x="${x}" y="${labelY}" text-anchor="middle" dominant-baseline="central">${escapeHtml(shortName)}</text>`
-    :`<text x="${x+(radius+8)*(flip?-1:1)}" y="${y}" transform="rotate(${degrees} ${x} ${y})" text-anchor="${flip?'end':'start'}" dominant-baseline="central">${escapeHtml(shortName)}</text>`;
    return `<g class="relationship-node" tabindex="0" role="button" aria-label="${escapeHtml(label)}" font-size="13" fill="#234e68">
     <title>${escapeHtml(label)}</title><circle cx="${x}" cy="${y}" r="${radius}" fill="#076187" stroke="white" stroke-width="1.5"/>
-    <text x="${x}" y="${y}" fill="white" font-weight="700" text-anchor="middle" dominant-baseline="central">${p.count}</text>${nameMarkup}</g>`;
+    <text x="${x}" y="${y}" fill="white" font-weight="700" text-anchor="middle" dominant-baseline="central">${p.count}</text>
+    <text class="relationship-name" x="${x}" y="${y+radius+13}" text-anchor="middle" dominant-baseline="central">${escapeHtml(shortName)}</text></g>`;
   }).join('');
-  container.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="min-width:${Math.ceil(size*.76)}px" role="group" aria-label="Présences et compositions partagées">${linkMarkup}${nodeMarkup}</svg>`;
+  container.innerHTML=`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="min-width:${Math.ceil(width*.76)}px" role="group" aria-label="Présences et compositions partagées">${linkMarkup}${nodeMarkup}</svg>`;
   const circles=container.querySelectorAll('.relationship-node'),lines=container.querySelectorAll('.relationship-link');
   function showPlayer(index){
    relationshipPlayer=nodes[index]?.id??null;

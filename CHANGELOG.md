@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 3.2.1 — 27 novembre 2026
+
+- Disposition de la carte des relations qui rapproche les joueurs ayant souvent joué dans la même équipe.
+
 ## 3.2 — 27 novembre 2026
 
 - Carte des relations de tous les participants dans **Statistique**, avec un filtre par jour de la semaine. La taille des cercles indique les présences et les traits deviennent plus épais et plus foncés lorsque deux joueurs partagent davantage de compositions.

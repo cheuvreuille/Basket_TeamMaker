@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -117,6 +117,6 @@ La vue affiche les huit coéquipiers les plus fréquents par défaut pour rester
 
 ## Carte des relations entre joueurs (3.2)
 
-Dans **Statistique**, choisissez **Tous les jours** ou un jour de la semaine dans la carte. Chaque cercle affiche le nombre de séances auxquelles le joueur a participé. Plus deux joueurs ont figuré dans la même équipe d’une composition enregistrée, plus leur trait est épais et foncé. Deux compositions distinctes d’une même séance peuvent contribuer deux fois au lien, tandis que chaque présence compte une seule fois par séance.
+Dans **Statistique**, choisissez **Tous les jours** ou un jour de la semaine dans la carte. Chaque cercle affiche le nombre de séances auxquelles le joueur a participé. Plus deux joueurs ont figuré dans la même équipe d’une composition enregistrée, plus leur trait est épais et foncé. La disposition rapproche les duos fréquents en tenant compte de l’ensemble des liens et de la place nécessaire pour lire les noms. Deux compositions distinctes d’une même séance peuvent contribuer deux fois au lien, tandis que chaque présence compte une seule fois par séance.
 
 Sélectionnez un cercle pour mettre en évidence ses liens et lire le nombre exact de compositions partagées. Les joueurs présents sans équipe apparaissent aussi. Le filtre est propre à la carte et les données viennent de l’historique des séances déjà inclus dans le JSON.

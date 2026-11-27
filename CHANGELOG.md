@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 3.2.2 — 27 novembre 2026
+
+- La vue **Coéquipiers les plus fréquents** reprend la disposition et le dégradé des liens de la carte globale. Les coéquipiers fréquents se rapprochent du joueur de référence.
+
 ## 3.2.1 — 27 novembre 2026
 
 - Disposition de la carte des relations qui rapproche les joueurs ayant souvent joué dans la même équipe.

@@ -27,6 +27,14 @@ try:
    page.wait_for_function('document.getElementById("importFile").value===""')
   def counts():
    return page.locator('#teammateGraph .teammate-node').evaluate_all('(nodes)=>Object.fromEntries(nodes.map(n=>[n.dataset.teammateId,Number(n.dataset.count)]))')
+  def length(line):
+   def point(index):
+    return [float(line.get_attribute(axis+str(index))) for axis in ('x','y')]
+   return dist(point(1),point(2))
+  def circles_separated(graph):
+   return graph.locator('circle').evaluate_all("""circles => circles.every((circle, i) =>
+    circles.slice(i+1).every(other => Math.hypot(circle.cx.baseVal.value-other.cx.baseVal.value,
+     circle.cy.baseVal.value-other.cy.baseVal.value) >= circle.r.baseVal.value+other.r.baseVal.value))""")
   page.locator('#historyTab').click()
   assert 'Sélectionnez' in page.locator('#teammateGraph').inner_text()
   upload(package)
@@ -34,6 +42,13 @@ try:
   assert counts()=={'b':3,'c':2,'d':1} # Excludes self, opponents, bench and a never-present player.
   assert page.locator('#teammateGraph line').count()==3
   assert page.locator('#teammateGraph .teammate-reference').count()==1
+  teammates_graph=page.locator('#teammateGraph')
+  frequent=teammates_graph.locator('line').filter(has_text='Alex et Bob')
+  occasional=teammates_graph.locator('line').filter(has_text='Alex et Camille')
+  rare=teammates_graph.locator('line').filter(has_text='Alex et Dany')
+  assert length(frequent)<length(occasional)<length(rare)
+  assert float(frequent.get_attribute('stroke-width'))>float(rare.get_attribute('stroke-width'))
+  assert frequent.get_attribute('stroke')!=rare.get_attribute('stroke')
   radii=page.locator('#teammateGraph .teammate-node circle').evaluate_all('(nodes)=>nodes.map(n=>Number(n.getAttribute("r")))')
   assert radii[0]>radii[1]>radii[2]
   assert page.locator('#teammateData tbody tr td').all_text_contents()==['3','2','1']
@@ -75,6 +90,7 @@ try:
   page.locator('#historyTab').click()
   page.locator('#teammateLimit').select_option('16');assert len(counts())==16
   page.locator('#teammateLimit').select_option('all');assert len(counts())==24
+  assert circles_separated(teammates_graph)
   for width in [390,1280]:
    page.set_viewport_size(dict(width=width,height=960))
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
@@ -142,10 +158,6 @@ try:
   strong=graph.locator('line').filter(has_text='Alex et Bob')
   medium=graph.locator('line').filter(has_text='Alex et Camille')
   weak=graph.locator('line').filter(has_text='Alex et Dany')
-  def length(line):
-   def point(index):
-    return [float(line.get_attribute(axis+str(index))) for axis in ('x','y')]
-   return dist(point(1),point(2))
   assert '3 compositions' in strong.locator('title').text_content()
   original_length=length(strong)
   assert original_length<length(medium)<length(weak)
@@ -182,9 +194,7 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   upload(large)
   assert graph.get_by_role('button').count()==25 and graph.locator('line').count()==300
-  assert graph.locator('circle').evaluate_all("""circles => circles.every((circle, i) =>
-   circles.slice(i+1).every(other => Math.hypot(circle.cx.baseVal.value-other.cx.baseVal.value,
-    circle.cy.baseVal.value-other.cy.baseVal.value) >= circle.r.baseVal.value+other.r.baseVal.value))""")
+  assert circles_separated(graph)
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   upload(hostile)
   assert graph.locator('img,script').count()==0 and not page.evaluate('window.bad||false')

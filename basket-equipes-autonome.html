@@ -13,7 +13,8 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .ranking-sort [aria-hidden]::after{content:'↕'}
 .ranking-wrap th[aria-sort=ascending] .ranking-sort [aria-hidden]::after{content:'↑'}
 .ranking-wrap th[aria-sort=descending] .ranking-sort [aria-hidden]::after{content:'↓'}
-.teammate-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.teammate-controls>div{flex:1;min-width:180px}.teammate-controls select{width:100%}.teammate-graph{overflow:auto;margin:16px 0;border-radius:12px;background:#f7fcff}.teammate-graph svg{display:block;margin:auto;max-width:none}.teammate-graph text{font-family:inherit;pointer-events:none}.teammate-node:focus circle{stroke:#102d46;stroke-width:3}.teammate-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#547087}.teammate-legend span{display:inline-flex;align-items:center;gap:7px}.teammate-legend i{display:inline-block;background:#087eaf;border-radius:50%;width:12px;height:12px}.teammate-legend span:last-child i{width:23px;height:23px}.teammate-table th:nth-child(1){white-space:normal!important;overflow-wrap:anywhere}
+.teammate-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.teammate-controls>div{flex:1;min-width:180px}.teammate-controls select{width:100%}
+.teammate-graph{margin:16px 0}.teammate-node:hover circle,.teammate-node:focus-visible circle,.teammate-reference:focus-visible circle{stroke:#102d46;stroke-width:3}.teammate-table th:nth-child(1){white-space:normal!important;overflow-wrap:anywhere}
 .relationship-heading,.relationship-legend{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 22px}
 .relationship-heading h2,.relationship-graph .history-empty{margin:0}
 .relationship-legend{justify-content:flex-start;margin:0 0 12px}
@@ -61,7 +62,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 #sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
 #sessionSaveDialog::backdrop{background:#102d4670}
 #sessionSaveDialog p{line-height:1.5}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.2.1</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.2.2</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -119,7 +120,21 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
     <ul id="relationshipPartners" hidden></ul>
    </div>
   </section>
-  <section class="panel full"><h2>Coéquipiers les plus fréquents</h2><p class="muted">Choisissez un joueur pour voir ses coéquipiers. Un cercle plus grand et plus foncé indique davantage de séances passées dans la même équipe. Chaque duo compte une fois par séance dans cette vue.</p><div class="teammate-controls"><div><label for="teammateReference">Joueur de référence</label><select id="teammateReference"><option value="">Choisir un joueur</option></select></div><div><label for="teammateLimit">Coéquipiers à afficher</label><select id="teammateLimit"><option value="8">Les 8 plus fréquents</option><option value="16">Les 16 plus fréquents</option><option value="all">Tous</option></select></div></div><p id="teammateSummary" class="muted" role="status"></p><div id="teammateGraph" class="teammate-graph"></div><div class="teammate-legend"><span><i aria-hidden="true"></i>Moins souvent ensemble</span><span><i aria-hidden="true"></i>Plus souvent ensemble</span></div><details><summary>Voir tous les coéquipiers</summary><div id="teammateData" class="history-table-wrap"></div></details></section>
+  <section class="panel full">
+   <h2 id="teammateHeading">Coéquipiers les plus fréquents</h2>
+   <p class="muted">Chaque duo compte une fois par séance passée dans la même équipe.</p>
+   <div class="teammate-controls">
+    <div><label for="teammateReference">Joueur de référence</label><select id="teammateReference"><option value="">Choisir un joueur</option></select></div>
+    <div><label for="teammateLimit">Coéquipiers à afficher</label><select id="teammateLimit"><option value="8">Les 8 plus fréquents</option><option value="16">Les 16 plus fréquents</option><option value="all">Tous</option></select></div>
+   </div>
+   <p id="teammateSummary" class="muted" role="status"></p>
+   <div id="teammateGraph" class="relationship-graph teammate-graph" role="region" aria-labelledby="teammateHeading" tabindex="0"></div>
+   <p id="teammateLegend" class="relationship-legend muted" hidden>
+    <span>Cercles · Séances ensemble</span>
+    <span><i class="relationship-scale" aria-hidden="true"></i> Traits · Plus courts, épais et foncés pour les coéquipiers fréquents</span>
+   </p>
+   <details><summary>Voir tous les coéquipiers</summary><div id="teammateData" class="history-table-wrap"></div></details>
+  </section>
   <section class="panel full">
    <h2>Gérer les séances</h2>
    <div class="history-actions">
@@ -837,29 +852,33 @@ const historyStore=(()=>{
   if(names.has(selected))$('teammateReference').value=selected;
   const reference=$('teammateReference').value;
   const teammates=reference?teammatesFor(reference,participants):[];
+  const container=$('teammateGraph');
+  $('teammateLegend').hidden=!teammates.length;
   $('teammateData').innerHTML=teammates.length?`<table class="teammate-table"><thead><tr><th scope="col">Coéquipier</th><th scope="col">Séances ensemble</th></tr></thead><tbody>${teammates.map(p=>`<tr data-teammate-id="${escapeHtml(p.id)}"><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune séance partagée avec un coéquipier.</p>';
   if(!reference||!teammates.length){
    $('teammateSummary').textContent='';
-   $('teammateGraph').innerHTML='<p class="history-empty">'+(!reference?'Sélectionnez un joueur pour afficher ses coéquipiers.':'Aucun coéquipier enregistré pour ce joueur. Enregistrez les compositions des équipes pour alimenter cette vue.')+'</p>';return;
+   container.innerHTML='<p class="history-empty">'+(!reference?'Sélectionnez un joueur pour afficher ses coéquipiers.':'Aucun coéquipier enregistré pour ce joueur. Enregistrez les compositions des équipes pour alimenter cette vue.')+'</p>';return;
   }
   const limit=$('teammateLimit').value==='all'?teammates.length:Number($('teammateLimit').value),shown=teammates.slice(0,limit);
-  $('teammateSummary').textContent=`${names.get(reference)} · ${countLabel(shown.length,'coéquipier affiché','coéquipiers affichés')} sur ${teammates.length}. Le nombre dans chaque cercle indique les séances passées dans la même équipe.`;
-  const rings=[];for(let offset=0,ring=1;offset<shown.length;ring++){const items=shown.slice(offset,offset+8*ring);rings.push(items);offset+=items.length}
-  const size=Math.max(340,Math.min(800,$('teammateGraph').clientWidth||600),rings.length*220+120),center=size/2,maxOrbit=center-70,maxRadius=Math.min(40,size*.065),maximum=teammates[0].count;
-  const positions=[];
-  rings.forEach((items,ring)=>items.forEach((p,i)=>{
-   const angle=-Math.PI/2+2*Math.PI*i/items.length+(ring%2?Math.PI/items.length:0),orbit=maxOrbit*(ring+1)/rings.length;
-   const opacity=.3+.7*p.count/maximum,color='#'+[8,126,175].map(c=>Math.round(255*(1-opacity)+c*opacity).toString(16).padStart(2,'0')).join('');
-   positions.push({...p,color,x:center+Math.cos(angle)*orbit,y:center+Math.sin(angle)*orbit,r:Math.max(9,maxRadius*Math.sqrt(p.count/maximum))});
-  }));
-  const short=name=>name.length>17?name.slice(0,16)+'…':name;
-  const links=positions.map(p=>`<line x1="${center}" y1="${center}" x2="${p.x}" y2="${p.y}" stroke="#087eaf" stroke-opacity="${.18+.45*p.count/maximum}" stroke-width="${1+3*p.count/maximum}"/>`).join('');
-  const nodes=positions.map(p=>`<g class="teammate-node" data-teammate-id="${escapeHtml(p.id)}" data-count="${p.count}" tabindex="0" role="group" aria-label="${escapeHtml(p.name)} : ${p.count} séance${p.count>1?'s':''} ensemble"><title>${escapeHtml(p.name)} : ${p.count} séance${p.count>1?'s':''} dans la même équipe</title><circle cx="${p.x}" cy="${p.y}" r="${p.r}" fill="${p.color}" stroke="#087eaf"/><text x="${p.x}" y="${p.y+5}" text-anchor="middle" fill="${teamInk(p.color)}" font-size="14" font-weight="700">${p.count}</text><text x="${p.x}" y="${p.y+p.r+18}" text-anchor="middle" fill="#234e68" font-size="13">${escapeHtml(short(p.name))}</text></g>`).join('');
-  const label=names.get(reference),referenceRadius=Math.min(52,size*.12);
-  $('teammateGraph').innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="group" aria-label="Coéquipiers de ${escapeHtml(label)}"><title>Coéquipiers de ${escapeHtml(label)} : taille des cercles proportionnelle au nombre de séances communes</title>${links}<g class="teammate-reference"><circle cx="${center}" cy="${center}" r="${referenceRadius}" fill="#102d46"/><text x="${center}" y="${center-5}" text-anchor="middle" fill="white" font-size="11">Référence</text><text x="${center}" y="${center+15}" text-anchor="middle" fill="white" font-size="12" font-weight="700">${escapeHtml(label.length>Math.floor(referenceRadius/3.5)?label.slice(0,Math.floor(referenceRadius/3.5)-1)+'…':label)}</text></g>${nodes}</svg>`;
+  const name=names.get(reference);
+  $('teammateSummary').textContent=`${name} · ${countLabel(shown.length,'coéquipier affiché','coéquipiers affichés')} sur ${teammates.length}.`;
+  const links=shown.map((p,i)=>({first:0,second:i+1,strength:relationshipStrength(p.count,teammates[0].count)}));
+  const layout=layoutRelationships([{name,count:0,radius:30},...shown],links);
+  const {positions}=layout,center=positions[0];
+  const linkMarkup=links.map(({second,strength})=>{
+   const player=shown[second-1];
+   const label=`${name} et ${player.name} · ${countLabel(player.count,'séance')} dans la même équipe`;
+   return relationshipLine(center,positions[second],strength,label);
+  }).reverse().join('');
+  const nodeMarkup=shown.map((p,i)=>{
+   const label=escapeHtml(`${p.name} · ${countLabel(p.count,'séance')} dans la même équipe`);
+   return `<g class="teammate-node" data-teammate-id="${escapeHtml(p.id)}" data-count="${p.count}" tabindex="0" role="group" aria-label="${label}"><title>${label}</title>${relationshipCircle(positions[i+1],p.count)}</g>`;
+  }).join('');
+  const referenceLabel=escapeHtml(`Joueur de référence · ${name}`);
+  const referenceMarkup=`<g class="teammate-reference" tabindex="0" role="group" aria-label="${referenceLabel}"><title>${referenceLabel}</title>${relationshipCircle(center,'Réf.','#102d46')}</g>`;
+  container.innerHTML=relationshipSvg(layout,`Coéquipiers de ${name}`,linkMarkup+referenceMarkup+nodeMarkup);
  }
- $('teammateReference').onchange=renderCharts;
- $('teammateLimit').onchange=renderCharts;
+ $('teammateReference').onchange=$('teammateLimit').onchange=()=>renderTeammates(summarizeAttendance().participants);
  const relationshipWeekday=$('relationshipWeekday');
  relationshipWeekday.innerHTML+=WEEKDAYS.map((name,day)=>`<option value="${day}">${name}</option>`).join('');
  relationshipWeekday.onchange=()=>renderRelationships(summarizeAttendance().participants);
@@ -885,13 +904,13 @@ const historyStore=(()=>{
 
  function layoutRelationships(nodes,links){
   const columns=Math.ceil(Math.sqrt(nodes.length*1.45));
-  const maxAttendance=nodes.reduce((max,p)=>Math.max(max,p.count),0);
+  const maxCount=nodes.reduce((max,p)=>Math.max(max,p.count),0);
   const measure=document.createElement('canvas').getContext('2d');
   measure.font='13px '+getComputedStyle(document.documentElement).fontFamily;
   const positions=nodes.map((p,index)=>{
    const name=[...p.name];
    const shortName=name.length>15?name.slice(0,14).join('')+'…':p.name;
-   const radius=Math.sqrt(100+576*p.count/maxAttendance);
+   const radius=p.radius??Math.sqrt(100+576*p.count/maxCount);
    const halfWidth=Math.max(radius,measure.measureText(shortName).width/2);
    const column=index%columns,row=Math.floor(index/columns);
    return {x:110*column+20*(row%2),y:92*row+18*(column%2),radius,halfWidth,shortName,fx:0,fy:0};
@@ -975,6 +994,22 @@ const historyStore=(()=>{
   return {positions,width,height};
  }
 
+ function relationshipStrength(count,maxCount){
+  return (count-1)/Math.max(1,maxCount-1);
+ }
+ function relationshipLine(from,to,strength,label){
+  const color=[124,168,196].map((c,i)=>Math.round(c+([20,65,128][i]-c)*strength));
+  return `<line class="relationship-link" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="rgb(${color.join(',')})" stroke-width="${1.4+4.6*strength}" stroke-linecap="round"><title>${escapeHtml(label)}</title></line>`;
+ }
+ function relationshipCircle({x,y,radius,shortName},text,fill='#076187'){
+  return `<circle cx="${x}" cy="${y}" r="${radius}" fill="${fill}" stroke="white" stroke-width="1.5"/>
+   <text x="${x}" y="${y}" fill="white" font-size="13" font-weight="700" text-anchor="middle" dominant-baseline="central">${escapeHtml(text)}</text>
+   <text class="relationship-name" x="${x}" y="${y+radius+13}" fill="#234e68" font-size="13" text-anchor="middle" dominant-baseline="central">${escapeHtml(shortName)}</text>`;
+ }
+ function relationshipSvg({width,height},label,markup){
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="min-width:${Math.ceil(width*.76)}px" role="group" aria-label="${escapeHtml(label)}">${markup}</svg>`;
+ }
+
  function renderRelationships(participants){
   const day=relationshipWeekday.value==='all'?null:Number(relationshipWeekday.value);
   const nodes=[...participants.values()].map(p=>({id:p.id,name:p.name,count:day===null?p.count:p.byDay[day]}))
@@ -997,23 +1032,17 @@ const historyStore=(()=>{
   }
 
   const maxLink=links.at(-1)?.count??1;
-  for(const link of links)link.strength=(link.count-1)/Math.max(1,maxLink-1);
-  const {positions,width,height}=layoutRelationships(nodes,links);
+  for(const link of links)link.strength=relationshipStrength(link.count,maxLink);
+  const layout=layoutRelationships(nodes,links),{positions}=layout;
   const linkMarkup=links.map(({first,second,count,strength})=>{
-   const from=positions[first],to=positions[second];
-   const color=[124,168,196].map((c,i)=>Math.round(c+([20,65,128][i]-c)*strength));
-   const label=`${nodes[first].name} et ${nodes[second].name} · ${count} composition${count===1?'':'s'} dans la même équipe`;
-   return `<line class="relationship-link" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="rgb(${color.join(',')})" stroke-width="${1.4+4.6*strength}" stroke-linecap="round"><title>${escapeHtml(label)}</title></line>`;
+   const label=`${nodes[first].name} et ${nodes[second].name} · ${countLabel(count,'composition')} dans la même équipe`;
+   return relationshipLine(positions[first],positions[second],strength,label);
   }).join('');
   const nodeMarkup=nodes.map((p,i)=>{
-   const {x,y,radius,shortName}=positions[i];
-   const label=`${p.name} · ${p.count} séance${p.count===1?'':'s'}`;
-   return `<g class="relationship-node" tabindex="0" role="button" aria-label="${escapeHtml(label)}" font-size="13" fill="#234e68">
-    <title>${escapeHtml(label)}</title><circle cx="${x}" cy="${y}" r="${radius}" fill="#076187" stroke="white" stroke-width="1.5"/>
-    <text x="${x}" y="${y}" fill="white" font-weight="700" text-anchor="middle" dominant-baseline="central">${p.count}</text>
-    <text class="relationship-name" x="${x}" y="${y+radius+13}" text-anchor="middle" dominant-baseline="central">${escapeHtml(shortName)}</text></g>`;
+   const label=escapeHtml(`${p.name} · ${countLabel(p.count,'séance')}`);
+   return `<g class="relationship-node" tabindex="0" role="button" aria-label="${label}"><title>${label}</title>${relationshipCircle(positions[i],p.count)}</g>`;
   }).join('');
-  container.innerHTML=`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="min-width:${Math.ceil(width*.76)}px" role="group" aria-label="Présences et compositions partagées">${linkMarkup}${nodeMarkup}</svg>`;
+  container.innerHTML=relationshipSvg(layout,'Présences et compositions partagées',linkMarkup+nodeMarkup);
   const circles=container.querySelectorAll('.relationship-node'),lines=container.querySelectorAll('.relationship-link');
   function showPlayer(index){
    relationshipPlayer=nodes[index]?.id??null;
@@ -1137,10 +1166,14 @@ const historyStore=(()=>{
    ${teammates?`<ol>${teammates}</ol>`:'<p class="muted">Aucune séance partagée avec un coéquipier.</p>'}`;
   container.hidden=false;
  }
- function renderCharts(){
+ function renderAttendancePlot(){
   const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));
   const dates=visibleSessions.map(s=>s.date),counts=visibleSessions.map(s=>s.players.length);
   renderAttendanceChart(dates,counts);
+  return {dates,counts};
+ }
+ function renderCharts(){
+  const {dates,counts}=renderAttendancePlot();
   $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th scope="col">Date</th><th scope="col">Nombre de présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune séance à afficher.</p>';
   const {participants,totals}=summarizeAttendance();
   renderAttendanceTables(participants,totals);
@@ -1148,7 +1181,7 @@ const historyStore=(()=>{
   $('sessionCount').textContent=countLabel(sessions.length,'séance');
   return participants;
  }
- window.addEventListener('resize',()=>{if(!$('historyPanel').hidden)renderCharts()});
+ window.addEventListener('resize',()=>{if(!$('historyPanel').hidden)renderAttendancePlot()});
  function refresh(selected=$('historyDay').value){
   renderRelationships(renderCharts());
   $('historyDay').innerHTML=sessions.length?sessions.slice().reverse().map(s=>`<option value="${escapeHtml(s.id)}">${dateLabel(s.date)} · ${countLabel(s.players.length,'présent')} · ${countLabel(s.compositions.length,'composition')}</option>`).join(''):'<option value="">Aucune séance</option>';

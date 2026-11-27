@@ -122,7 +122,61 @@ try:
   page.locator('[data-open-player="f"]').click()
   assert 'Aucune participation' in profile.inner_text() and profile.locator('li').count()==0
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+
+  # The global graph counts presences per date and links per saved composition.
+  first=session(10,[['a','b','d'],['c']])
+  second=session(11,[['a','b','c'],['d']])
+  repeat=session(11,[['b','a'],['d','c']]) # Reversed member order still describes the same pairs.
+  second['compositions']=[{key:record[key] for key in ('teams','bench')} for record in (second,repeat)]
+  wednesday=session(18,[['a','c'],['b','d']])
+  solo=dict(id='solo',date='2026-11-12',players=[people[5]],teams=[])
+  upload(dict(package,statisticsWeekdays=[2],sessions=[first,second,wednesday,solo]))
+  page.locator('#historyTab').click()
+  graph=page.locator('#relationshipGraph')
+  day=page.locator('#relationshipWeekday')
+  alex=graph.get_by_role('button',name='Alex · 3 séances')
+  fran=graph.get_by_role('button',name='Fran · 1 séance')
+  assert graph.get_by_role('button').count()==6 and graph.locator('line').count()==6
+  assert float(alex.locator('circle').get_attribute('r'))>float(fran.locator('circle').get_attribute('r'))
+  strong=graph.locator('line').filter(has_text='Alex et Bob')
+  weak=graph.locator('line').filter(has_text='Alex et Dany')
+  assert '3 compositions' in strong.locator('title').text_content()
+  assert float(strong.get_attribute('stroke-width'))>float(weak.get_attribute('stroke-width'))
+  assert strong.get_attribute('stroke')!=weak.get_attribute('stroke')
+  alex.press('Enter')
+  assert alex.get_attribute('aria-pressed')=='true'
+  assert graph.locator('line.is-selected').count()==3
+  assert page.locator('#relationshipPartners li').all_text_contents()==['Bob · 3 compositions','Camille · 2 compositions','Dany · 1 composition']
+  alex.press('Space')
+  assert alex.get_attribute('aria-pressed')=='false'
+  day.select_option('1')
+  assert graph.get_by_role('button',name='Alex · 1 séance').count()==1
+  assert graph.locator('line').count()==3 and not graph.locator('line').filter(has_text='Alex et Camille').count()
+  day.select_option('2')
+  graph.get_by_role('button',name='Alex · 2 séances').press('Enter')
+  assert page.locator('#relationshipPartners li').all_text_contents()==['Bob · 2 compositions','Camille · 2 compositions']
+  day.select_option('3')
+  fran.press('Enter')
+  assert graph.get_by_role('button').count()==1 and not graph.locator('line').count()
+  assert 'Aucun coéquipier' in page.locator('#relationshipSelection').inner_text()
+  day.select_option('0')
+  assert 'Aucune présence' in graph.inner_text() and not graph.locator('svg').count()
+  day.select_option('all')
+  page.locator('#historyDay').select_option('s10')
+  page.locator('[data-history-player="b"] .history-assignment').select_option('t1')
+  page.locator('#saveHistoryEdits').click()
+  assert '2 compositions' in strong.locator('title').text_content()
+  assert graph.get_by_role('button',name='Bob · 3 séances').count()==1
+  for width in [1280,390]:
+   page.set_viewport_size(dict(width=width,height=960))
+   graph.screenshot(path=f'/tmp/relationships-{width}.png')
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+  upload(large)
+  assert graph.get_by_role('button').count()==25 and graph.locator('line').count()==300
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+  upload(hostile)
+  assert graph.locator('img,script').count()==0 and not page.evaluate('window.bad||false')
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
-print('PASS: reference dropdown, exact shared-team counts/symmetry, proportional circles, bench/opponent exclusion, archived players, edits/deletions, persistence/import/export, limits, mobile, escaped labels.')
+print('PASS: player and global graphs, weekday filtering, exact attendance and composition counts, keyboard selection, archived players, edits/deletions, import/export, limits, mobile, escaped labels.')

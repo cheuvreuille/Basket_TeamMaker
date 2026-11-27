@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 3.2 — 27 novembre 2026
+
+- Carte des relations de tous les participants dans **Statistique**, avec un filtre par jour de la semaine. La taille des cercles indique les présences et les traits deviennent plus épais et plus foncés lorsque deux joueurs partagent davantage de compositions.
+
 ## 3.1 — 27 novembre 2026
 
 - Plusieurs compositions peuvent être enregistrées pour une même séance. **Save** permet d’ajouter une composition ou de remplacer la séance du jour.

@@ -7,7 +7,7 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 - **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique. La fiche affiche les participations et le taux de présence pour les jours sélectionnés dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers classés par nombre de séances jouées dans la même équipe.
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
 - **Match** est réservé à une future évolution.
-- **Statistique** donne accès au suivi des séances, aux présences et aux coéquipiers fréquents.
+- **Statistique** donne accès au suivi des séances, aux présences, à la carte des relations et aux coéquipiers fréquents.
 - **Configuration** regroupe les réglages de l’IA et le choix des jours affichés dans les statistiques. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
 
 ## Postes des joueurs
@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -114,3 +114,9 @@ Dans **Statistique**, choisir un **Joueur de référence**. Il apparaît au cent
 Le calcul utilise uniquement les équipes des séances enregistrées, pas les compositions courantes non sauvegardées. Une paire est comptée une fois par séance ; adversaires, présents non affectés et joueur lui-même sont exclus. Le suivi repose sur les identifiants, conserve les joueurs archivés et se recalcule après correction, suppression ou import. Les noms suivent la même règle que le classement : nom courant si le joueur est encore dans l’effectif, sinon dernier nom enregistré.
 
 La vue affiche les huit coéquipiers les plus fréquents par défaut pour rester lisible. Le sélecteur permet d’en afficher seize ou tous ; la liste complète reste disponible dans tous les cas. Pour les réseaux importants, plusieurs anneaux sont utilisés et le schéma peut défiler dans son cadre, notamment sur mobile. À égalité, le tri est alphabétique. Aucune nouvelle donnée ni version de format JSON n’est nécessaire : les relations sont calculées à partir des séances existantes.
+
+## Carte des relations entre joueurs (3.2)
+
+Dans **Statistique**, choisissez **Tous les jours** ou un jour de la semaine dans la carte. Chaque cercle affiche le nombre de séances auxquelles le joueur a participé. Plus deux joueurs ont figuré dans la même équipe d’une composition enregistrée, plus leur trait est épais et foncé. Deux compositions distinctes d’une même séance peuvent contribuer deux fois au lien, tandis que chaque présence compte une seule fois par séance.
+
+Sélectionnez un cercle pour mettre en évidence ses liens et lire le nombre exact de compositions partagées. Les joueurs présents sans équipe apparaissent aussi. Le filtre est propre à la carte et les données viennent de l’historique des séances déjà inclus dans le JSON.

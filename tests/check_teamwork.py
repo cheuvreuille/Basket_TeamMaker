@@ -37,7 +37,7 @@ try:
    assert page.evaluate('players.length===9&&players.every(p=>p.teamwork===0)')
   # Editing, all three labels, cancellation, creation, persistence.
   page.locator('[data-open-player="0"]').click()
-  for value,label in [(-1,'Moins de passe'),(0,'Équilibré'),(1,'Trop de passe')]:
+  for value,label in [(-1,'Moins de passes'),(0,'Équilibré'),(1,'Trop de passes')]:
    page.locator('#teamwork').fill(str(value))
    assert label in page.locator('#teamworkValue').inner_text()
    assert page.locator('#teamwork').get_attribute('aria-valuetext')==label

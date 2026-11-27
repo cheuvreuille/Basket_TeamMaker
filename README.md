@@ -1,4 +1,4 @@
-# Basket_TeamMaker
+# Basket Team tracker
 
 Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossier avec `python3 -m http.server 8000`. `index.html` redirige vers l’application pour GitHub Pages.
 
@@ -34,7 +34,7 @@ Les implémentations sont isolées dans `ENGINE_V1`, `ENGINE_V2` et `ENGINE_V3` 
 
 ## Ajustements manuels
 
-Après une génération locale ou IA, glisser un joueur sur une autre équipe, ou sélectionner sa destination dans le menu « Déplacer vers ». Les joueurs sont affichés par poste principal (1 à 5, postes non renseignés en dernier), y compris dans la copie. La synthèse sous chaque nom présente le niveau global en toutes lettres, la taille en cm, le genre et le nom du poste principal. Le menu de transfert est compact. Les effectifs et statistiques sont actualisés, et « Copier » utilise la composition modifiée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Les compositions non enregistrées ne sont pas conservées après rechargement de la page. Le bouton « Save » permet désormais de les archiver dans le suivi.
+Après une génération locale ou IA, faites glisser un joueur vers une autre équipe ou choisissez sa destination dans le menu à côté de son nom. Les joueurs sont affichés par poste principal (1 à 5, postes non renseignés en dernier), y compris dans la copie. La synthèse sous chaque nom présente le niveau global en toutes lettres, la taille en cm, le genre et le nom du poste principal. Les effectifs et statistiques s’actualisent après chaque déplacement. **Copier les équipes** utilise la composition affichée. Les déplacements sont libres, même si une équipe devient vide ou les effectifs inégaux. Une nouvelle génération remplace les ajustements. Cliquez sur **Enregistrer la composition** pour l’ajouter au suivi.
 
 ## Vérifications
 
@@ -61,13 +61,13 @@ Chaque carte d’équipe propose la palette noir, blanc, bleu, jaune, violet et 
 
 ## Jeu en équipe (1.6)
 
-La fiche de chaque joueur comporte une jauge à trois niveaux : **−1 : Moins de passe**, **0 : Équilibré**, **1 : Trop de passe**. La valeur est conservée lors des modifications, des rechargements et des exports JSON dans le champ numérique `teamwork`. Les fichiers JSON et les données locales qui ne comportent pas ce champ reçoivent automatiquement la valeur `0`. Les valeurs invalides sont également ramenées à `0`. Le format JSON reste en version 1. Les exports restent lisibles par les anciennes versions de l’application, qui ignorent ce champ supplémentaire.
+La fiche de chaque joueur comporte une jauge à trois niveaux (**−1 · Moins de passes**, **0 · Équilibré**, **1 · Trop de passes**). La valeur est conservée lors des modifications, des rechargements et des exports JSON dans le champ numérique `teamwork`. Les fichiers JSON et les données locales qui ne comportent pas ce champ reçoivent automatiquement la valeur `0`. Les valeurs invalides sont également ramenées à `0`. Le format JSON reste en version 1. Les exports restent lisibles par les anciennes versions de l’application, qui ignorent ce champ supplémentaire.
 
 Seul le nouveau moteur local **3.0** tient compte de cette caractéristique. Les calculs des moteurs **1.0 et 2.0** sont inchangés et l’ignorent. Les consignes de l’option IA décrivent également ce nouveau champ.
 
 ## Statistique et suivi des séances
 
-Dans **Entraînement**, après une génération locale ou IA et les éventuels transferts, **Save** enregistre la composition dans la séance du jour. Si une séance existe déjà, **Ajouter à la séance** conserve ses compositions et réunit les listes de présents. **Remplacer la séance** conserve la composition et les présents actuels. Le bouton demande de régénérer les équipes si les présences actuelles diffèrent de la composition affichée.
+Dans **Entraînement**, cliquez sur **Enregistrer la composition** pour l’ajouter à la séance du jour après avoir généré et, si besoin, ajusté les équipes. Si une séance existe déjà, **Ajouter à la séance** conserve ses compositions et réunit les listes de présents. **Remplacer la séance** enregistre la composition et les présents actuels à la place des données du jour. Le bouton demande de régénérer les équipes si les présences actuelles diffèrent de la composition affichée.
 
 Dans **Statistique**, sélectionnez une date, puis la composition à consulter ou modifier. Chaque joueur compte une fois dans les présences du jour. Pour les coéquipiers fréquents, une paire compte une fois dès qu’elle a joué dans la même équipe dans au moins une composition de la séance.
 

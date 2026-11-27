@@ -3,6 +3,7 @@
 ## 3.2.1 — 27 novembre 2026
 
 - Disposition de la carte des relations qui rapproche les joueurs ayant souvent joué dans la même équipe.
+- Nouveau nom **Basket Team tracker** et révision des libellés, aides et messages de l’interface.
 
 ## 3.2 — 27 novembre 2026
 

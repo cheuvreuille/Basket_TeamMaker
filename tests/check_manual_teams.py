@@ -64,7 +64,7 @@ try:
         assert page.locator('[data-team="0"] .chip').inner_text() == '1 joueur'
         assert page.locator('[data-team="1"] .chip').inner_text() == '3 joueurs'
         stats = page.locator('[data-team="1"] .stats').inner_text()
-        assert 'Niveau moy. 2.7' in stats and 'Taille moy. 186.7 cm' in stats
+        assert 'Niveau moyen 2,7' in stats and 'Taille moyenne 186,7 cm' in stats
         assert 'Modifiées manuellement' in page.locator('#resultMeta').inner_text()
         invariant()
         assert page.locator('[data-team="0"] .team-custom-color').input_value() == '#ff8800'
@@ -73,7 +73,7 @@ try:
         page.locator('[data-player="1"] select').select_option('1')
         assert page.locator('[data-team="0"] .empty-team').is_visible()
         assert 'NaN' not in page.locator('#teams').inner_text()
-        assert 'Niveau moy. —' in page.locator('[data-team="0"]').inner_text()
+        assert 'Niveau moyen —' in page.locator('[data-team="0"]').inner_text()
         page.locator('[data-player="2"] select').select_option('0')
         invariant()
         # Clipboard follows the edited result.

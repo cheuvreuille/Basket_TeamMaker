@@ -23,6 +23,8 @@ try:
   page.clock.install(time=datetime(2026,11,19,23,30,tzinfo=timezone.utc))
   page.goto(base+'/')
   page.wait_for_url('**/basket-equipes-autonome.html')
+  assert page.title()=='Basket Team tracker'
+  assert page.get_by_role('heading',level=1).inner_text()=='Basket Team tracker'
   def upload(data):
    page.locator('#importFile').set_input_files(dict(name='basket.json',mimeType='application/json',buffer=json.dumps(data).encode()))
    page.wait_for_function('document.getElementById("importFile").value===""')

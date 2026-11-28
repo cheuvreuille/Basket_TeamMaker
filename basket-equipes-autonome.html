@@ -75,12 +75,14 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .match-substitutes,.match-details{overflow-wrap:anywhere}
 .match-details ol{padding-inline-start:28px}
 #matchStatus:not(:empty){margin-top:14px}
+.match-average{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0}
+.match-average strong{font-size:28px;color:#075a80;font-variant-numeric:tabular-nums}
 #editorTitle{overflow-wrap:anywhere}
 @media(max-width:480px){.main-tabs{gap:6px}.main-tabs button{padding:10px 12px}}
 #sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
 #sessionSaveDialog::backdrop{background:#102d4670}
 #sessionSaveDialog p{line-height:1.5}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.3</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.3.1</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -145,12 +147,17 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
  <div class="grid history-grid">
   <section class="panel full"><div class="summary"><h2>Statistiques</h2><span class="pill" id="sessionCount">0 séance</span></div><label for="statisticsMode">Activité</label><select id="statisticsMode"><option value="training">Entraînement</option><option value="match">Match</option></select><p id="statisticsHelp" class="muted"></p></section>
   <section class="panel"><h2>Présences par date</h2><div id="attendanceChart" class="history-chart"></div><details><summary>Voir les données du graphique</summary><div id="attendanceData" class="history-table-wrap"></div></details></section>
-  <section class="panel"><h2>Nombre moyen de présents par jour de la semaine</h2><div id="weekdayAttendance" class="history-table-wrap"></div></section>
-  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Choisissez « Participations » ou un jour pour trier le classement. Sélectionnez le même en-tête pour inverser l’ordre. Le taux rapporte les présences du joueur au nombre d’événements enregistrés pour le jour de la semaine.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
+  <section class="panel" id="weekdayAttendancePanel"><h2>Nombre moyen de présents par jour de la semaine</h2><div id="weekdayAttendance" class="history-table-wrap"></div></section>
+  <section class="panel" id="matchAttendancePanel" hidden>
+   <h2>Présence moyenne par match</h2>
+   <p class="match-average"><strong id="matchAverage">—</strong> joueurs sélectionnés par match</p>
+   <p id="matchAverageSample" class="muted"></p>
+  </section>
+  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p id="participationHelp" class="muted"></p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
   <section class="panel full">
    <div class="relationship-heading">
     <h2 id="relationshipHeading">Carte des relations entre joueurs</h2>
-    <div><label for="relationshipWeekday">Jour de la semaine</label><select id="relationshipWeekday"><option value="all">Tous les jours</option></select></div>
+    <div id="relationshipWeekdayControl"><label for="relationshipWeekday">Jour de la semaine</label><select id="relationshipWeekday"><option value="all">Tous les jours</option></select></div>
    </div>
    <p id="relationshipSummary" class="muted" role="status"></p>
    <p class="relationship-legend muted" id="relationshipLegend" hidden>
@@ -203,7 +210,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 <section id="configPanel" role="tabpanel" aria-labelledby="configTab" hidden>
  <section class="panel configuration-card">
   <fieldset class="weekday-preferences" aria-describedby="weekdayHelp">
-   <legend>Jours affichés dans les statistiques</legend>
+   <legend>Jours affichés dans les statistiques d’entraînement</legend>
    <p id="weekdayHelp" class="muted">Choisissez les jours à afficher dans le graphique des présences, les moyennes et les pourcentages du classement. Cette sélection est conservée dans ce navigateur et dans l’export JSON.</p>
    <div id="weekdayOptions" class="weekday-options"></div>
   </fieldset>
@@ -640,7 +647,8 @@ const historyStore=(()=>{
  let sessions=[],draft=null,compositionId=null,blocked=false;
  let matches=[],matchesBlocked=false,editedMatchId=null;
  let matchSelected=new Set(),matchStarters=POSITIONS.map(()=>'');
- let rankingColumn='count',rankingDirection='descending';
+ const trainingRanking={column:'count',direction:'descending'};
+ const matchRanking={column:'count',direction:'descending'};
  let relationshipPlayer=null;
  const clone=value=>JSON.parse(JSON.stringify(value));
  const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('fr-FR');
@@ -998,10 +1006,12 @@ const historyStore=(()=>{
  }
  function renderAttendanceChart(records,visible){
   const container=$('attendanceChart');
+  const matchMode=matchStats();
   if(!visible.length){
-   const empty=matchStats()?'Aucun match enregistré. Enregistrez un match dans l’onglet « Match ».':'Aucune séance enregistrée. Créez une séance dans « Gérer les séances » ou enregistrez une composition dans « Entraînement ».';
-   const noDay=matchStats()?'Aucun match enregistré pour les jours sélectionnés.':'Aucune séance enregistrée pour les jours sélectionnés.';
-   const message=!displayedDays.length?'Choisissez les jours à afficher dans l’onglet « Configuration ».':records.length?noDay:empty;
+   const message=matchMode?'Aucun match enregistré. Enregistrez un match dans l’onglet « Match ».'
+    :!displayedDays.length?'Choisissez les jours à afficher dans l’onglet « Configuration ».'
+    :records.length?'Aucune séance enregistrée pour les jours sélectionnés.'
+    :'Aucune séance enregistrée. Créez une séance dans « Gérer les séances » ou enregistrez une composition dans « Entraînement ».';
    container.innerHTML=`<p class="history-empty">${message}</p>`;
    return;
   }
@@ -1020,7 +1030,7 @@ const historyStore=(()=>{
   for(const tick of new Set([0,Math.ceil(max/2),max])){
    content+=`<line x1="${left}" x2="${width-right}" y1="${y(tick)}" y2="${y(tick)}" stroke="#d7eaf4"/><text x="${left-8}" y="${y(tick)+4}" text-anchor="end">${tick}</text>`;
   }
-  content+=calendarDividers(firstDay,lastDay,x,top,bottom,plotWidth);
+  if(!matchMode)content+=calendarDividers(firstDay,lastDay,x,top,bottom,plotWidth);
   const dateText=(index,anchor)=>`<text x="${x(days[index])}" y="${height-20}" text-anchor="${anchor}">${escapeHtml(dateLabel(dates[index]))}</text>`;
   if(days.length===1)content+=dateText(0,'middle');
   else{
@@ -1034,31 +1044,32 @@ const historyStore=(()=>{
    }
    content+=dateText(days.length-1,'end');
   }
-  const series=WEEKDAYS.map(()=>[]);
+  const series=matchMode?[[]]:WEEKDAYS.map(()=>[]);
   for(const [date,group] of byDate){
-   const day=calendarDay(date),weekday=weekdayIndex(day),gaps=group.length-1;
+   const day=calendarDay(date),index=matchMode?0:weekdayIndex(day),gaps=group.length-1;
    const spacing=gaps?Math.min(12,plotWidth*.6/(Math.max(1,lastDay-firstDay)*gaps)):0;
-   group.forEach(({players,opponent},index)=>{
+   group.forEach(({players,opponent},offset)=>{
     const count=players.length;
-    series[weekday].push({x:x(day)+(index-gaps/2)*spacing,y:y(count),date,count,opponent});
+    series[index].push({x:x(day)+(offset-gaps/2)*spacing,y:y(count),date,count,opponent});
    });
   }
-  for(const weekday of displayedDays){
-   const points=series[weekday];
+  for(const index of matchMode?[0]:displayedDays){
+   const points=series[index];
    if(!points.length)continue;
-   const color=WEEKDAY_COLORS[weekday];
-   content+=`<g data-attendance-weekday="${weekday}">`;
+   const color=matchMode?'#087eaf':WEEKDAY_COLORS[index];
+   content+=matchMode?'<g>':`<g data-attendance-weekday="${index}">`;
    if(points.length>1)content+=`<polyline points="${points.map(point=>`${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2"/>`;
    for(const point of points){
-    const label=[WEEKDAYS[weekday]+' '+dateLabel(point.date),point.opponent,countLabel(point.count,'présent')].filter(Boolean).join(' · ');
+    const date=matchMode?dateLabel(point.date):WEEKDAYS[index]+' '+dateLabel(point.date);
+    const label=[date,point.opponent,countLabel(point.count,'présent')].filter(Boolean).join(' · ');
     content+=`<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="${color}" stroke="white" stroke-width="1"><title>${escapeHtml(label)}</title></circle>`;
    }
    content+='</g>';
   }
-  const description=matchStats()?'Nombre de joueurs sélectionnés pour chaque match':'Nombre de joueurs présents à chaque séance';
-  const legend=displayedDays.map(day=>`<li data-legend-weekday="${day}"><span aria-hidden="true" style="background:${WEEKDAY_COLORS[day]}"></span>${WEEKDAYS[day]}</li>`).join('');
-  container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>
-   <ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${legend}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
+  const description=matchMode?'Nombre de joueurs sélectionnés pour chaque match':'Nombre de joueurs présents à chaque séance';
+  const weekdays=matchMode?'':displayedDays.map(day=>`<li data-legend-weekday="${day}"><span aria-hidden="true" style="background:${WEEKDAY_COLORS[day]}"></span>${WEEKDAYS[day]}</li>`).join('');
+  const legend=matchMode?'':`<ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${weekdays}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
+  container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>${legend}`;
  }
  function teammatesFor(reference,participants,records=sessions){
   const counts=new Map();
@@ -1246,7 +1257,7 @@ const historyStore=(()=>{
  }
 
  function renderRelationships(participants,records){
-  const day=relationshipWeekday.value==='all'?null:Number(relationshipWeekday.value);
+  const day=matchStats()||relationshipWeekday.value==='all'?null:Number(relationshipWeekday.value);
   const nodes=[...participants.values()].map(p=>({id:p.id,name:p.name,count:day===null?p.count:p.byDay[day]}))
    .filter(p=>p.count>0).sort(comparePlayerNames);
   const links=countSharedCompositions(nodes,day,records);
@@ -1297,7 +1308,7 @@ const historyStore=(()=>{
     circle.classList.toggle('is-muted',index!==-1&&index!==i&&!related.has(i));
    });
    const sharedLabel=matchStats()?'Matchs en commun':'Compositions en commun';
-   selection.textContent=index===-1?'':nodes[index].name+' · '+(details.length?sharedLabel:'Aucun coéquipier pour les jours sélectionnés');
+   selection.textContent=index===-1?'':nodes[index].name+' · '+(details.length?sharedLabel:'Aucun coéquipier à afficher');
    partners.hidden=!details.length;
    partners.innerHTML=details.sort((a,b)=>b.count-a.count||comparePlayerNames(a,b))
     .map(({name,count})=>`<li>${escapeHtml(name)} · ${countLabel(count,relationshipUnit())}</li>`).join('');
@@ -1314,38 +1325,46 @@ const historyStore=(()=>{
   showPlayer(nodes.findIndex(p=>p.id===relationshipPlayer));
  }
 
- function renderAttendanceTables(participants,totals){
-  $('weekdayAttendance').innerHTML=displayedDays.length?`<table><thead><tr><th scope="col">Jour</th><th scope="col">${matchStats()?'Matchs':'Séances'}</th><th scope="col">Nombre moyen de présents</th></tr></thead><tbody>${displayedDays.map(day=>{
-   const {sessions,players}=totals[day];
-   return `<tr><th scope="row">${WEEKDAYS[day]}</th><td>${sessions}</td><td>${sessions?averageFormat.format(players/sessions):'—'}</td></tr>`;
-  }).join('')}</tbody></table>`:'<p class="muted">Choisissez les jours à afficher dans l’onglet « Configuration ».</p>';
+ function renderAttendanceTables(participants,totals,records){
+  if(matchStats()){
+   const total=records.reduce((sum,match)=>sum+match.players.length,0);
+   $('matchAverage').textContent=records.length?averageFormat.format(total/records.length):'—';
+   $('matchAverageSample').textContent=records.length
+    ?`Sur ${countLabel(records.length,'match enregistré','matchs enregistrés')}.`
+    :'Aucun match enregistré.';
+  }else{
+   $('weekdayAttendance').innerHTML=displayedDays.length?`<table><thead><tr><th scope="col">Jour</th><th scope="col">Séances</th><th scope="col">Nombre moyen de présents</th></tr></thead><tbody>${displayedDays.map(day=>{
+    const {sessions,players}=totals[day];
+    return `<tr><th scope="row">${WEEKDAYS[day]}</th><td>${sessions}</td><td>${sessions?averageFormat.format(players/sessions):'—'}</td></tr>`;
+   }).join('')}</tbody></table>`:'<p class="muted">Choisissez les jours à afficher dans l’onglet « Configuration ».</p>';
+  }
   renderParticipationRanking(participants,totals);
  }
 
  function renderParticipationRanking(participants,totals){
   const tableContainer=$('participationData');
-  const unitLabel=attendanceUnit();
-  const noDay=matchStats()?'Aucun match enregistré ce jour':'Aucune séance enregistrée ce jour';
-  const activeDay=Number(rankingColumn);
-  if(rankingColumn!=='count'&&(!displayedDays.includes(activeDay)||!totals[activeDay].sessions)){
-   rankingColumn='count';rankingDirection='descending';
+  const matchMode=matchStats(),sorting=matchMode?matchRanking:trainingRanking;
+  const rankingDays=matchMode?[]:displayedDays;
+  const activeDay=Number(sorting.column);
+  if(sorting.column!=='count'&&(!rankingDays.includes(activeDay)||!totals[activeDay].sessions)){
+   sorting.column='count';sorting.direction='descending';
   }
   // Every player has the same denominator for a given weekday.
-  const value=player=>rankingColumn==='count'?player.count:player.byDay[Number(rankingColumn)];
-  const direction=rankingDirection==='ascending'?1:-1;
+  const value=player=>sorting.column==='count'?player.count:player.byDay[Number(sorting.column)];
+  const direction=sorting.direction==='ascending'?1:-1;
   const ranking=[...participants.values()].sort((a,b)=>direction*(value(a)-value(b))||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
   const header=(column,label,enabled=true)=>{
-   const active=rankingColumn===String(column);
-   const sort=active?` aria-sort="${rankingDirection}"`:'';
-   return `<th scope="col"${sort}><button type="button" class="ranking-sort" data-ranking-sort="${column}"${enabled?'':` disabled title="${noDay}"`}>${label}<span aria-hidden="true"></span></button></th>`;
+   const active=sorting.column===String(column);
+   const sort=active?` aria-sort="${sorting.direction}"`:'';
+   return `<th scope="col"${sort}><button type="button" class="ranking-sort" data-ranking-sort="${column}"${enabled?'':' disabled title="Aucune séance enregistrée ce jour"'}>${label}<span aria-hidden="true"></span></button></th>`;
   };
-  const dayHeaders=displayedDays.map(day=>header(day,`${WEEKDAYS[day]} (%)`,totals[day].sessions>0)).join('');
+  const dayHeaders=rankingDays.map(day=>header(day,`${WEEKDAYS[day]} (%)`,totals[day].sessions>0)).join('');
   const rows=ranking.map((p,i)=>{
-   const rates=displayedDays.map(day=>{
+   const rates=rankingDays.map(day=>{
     const total=totals[day].sessions;
     if(!total)return '<td>—</td>';
     const present=p.byDay[day];
-    return `<td title="${present} sur ${countLabel(total,unitLabel)}">${rateFormat.format(present/total)}</td>`;
+    return `<td title="${present} sur ${countLabel(total,'séance')}">${rateFormat.format(present/total)}</td>`;
    }).join('');
    return `<tr data-ranking-player="${escapeHtml(p.id)}"><td>${i+1}</td><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td>${rates}</tr>`;
   });
@@ -1353,8 +1372,8 @@ const historyStore=(()=>{
   tableContainer.querySelectorAll('[data-ranking-sort]').forEach(button=>button.addEventListener('click',()=>{
    const column=button.dataset.rankingSort;
    const scrollLeft=tableContainer.scrollLeft;
-   rankingDirection=rankingColumn===column&&rankingDirection==='descending'?'ascending':'descending';
-   rankingColumn=column;
+   sorting.direction=sorting.column===column&&sorting.direction==='descending'?'ascending':'descending';
+   sorting.column=column;
    renderParticipationRanking(participants,totals);
    tableContainer.scrollTop=0;
    tableContainer.scrollLeft=scrollLeft;
@@ -1406,7 +1425,7 @@ const historyStore=(()=>{
   container.hidden=false;
  }
  function renderAttendancePlot(records=statisticsRecords()){
-  const visible=records.filter(record=>displayedDays.includes(weekdayIndex(calendarDay(record.date))));
+  const visible=matchStats()?records:records.filter(record=>displayedDays.includes(weekdayIndex(calendarDay(record.date))));
   renderAttendanceChart(records,visible);
   return visible;
  }
@@ -1418,7 +1437,7 @@ const historyStore=(()=>{
    return `<tr><td>${dateLabel(record.date)}</td>${opponentCell}<td>${record.players.length}</td></tr>`;
   }).join('')}</tbody></table>`:`<p class="muted">${matchMode?'Aucun match à afficher.':'Aucune séance à afficher.'}</p>`;
   const {participants,totals}=summarizeAttendance(records);
-  renderAttendanceTables(participants,totals);
+  renderAttendanceTables(participants,totals,records);
   renderTeammates(participants,records);
   $('sessionCount').textContent=countLabel(records.length,attendanceUnit());
   return participants;
@@ -1427,6 +1446,12 @@ const historyStore=(()=>{
   const matchMode=matchStats(),records=statisticsRecords();
   $('trainingHistory').hidden=matchMode;
   $('matchHistory').hidden=!matchMode;
+  $('weekdayAttendancePanel').hidden=matchMode;
+  $('matchAttendancePanel').hidden=!matchMode;
+  $('relationshipWeekdayControl').hidden=matchMode;
+  $('participationHelp').textContent=matchMode
+   ?'Sélectionnez « Participations » pour trier les joueurs par nombre de matchs.'
+   :'Choisissez « Participations » ou un jour pour trier le classement. Sélectionnez le même en-tête pour inverser l’ordre. Le taux rapporte les présences du joueur au nombre de séances enregistrées pour le jour de la semaine.';
   $('statisticsHelp').textContent=matchMode
    ?'Les titulaires et les remplaçants comptent chacun une fois par match enregistré.'
    :'Ces données proviennent des entraînements enregistrés ou saisis manuellement. Chaque joueur compte une fois par séance.';

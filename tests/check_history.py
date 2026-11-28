@@ -34,7 +34,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.3'
+  assert page.locator('#appVersion').inner_text()=='Version 3.3.1'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
@@ -394,8 +394,11 @@ try:
   def match_tab():page.locator('#matchTab').click()
   def match_records():return page.evaluate('JSON.parse(localStorage.getItem("basket-matches-v1")||"[]")')
   mode=page.locator('#statisticsMode')
+  relationship_day=page.locator('#relationshipWeekday')
+  relationship_day.select_option('4')
   mode.select_option('match')
   assert 'Aucun match' in chart.inner_text() and not page.locator('#trainingHistory').is_visible()
+  assert page.locator('#matchAverage').inner_text()=='—'
   original_roster=page.evaluate('JSON.stringify(players)')
   match_tab()
   assert page.locator('#matchRoster input:checked').count()==0
@@ -422,22 +425,33 @@ try:
    page.locator(f'#matchStarter_{i}').select_option(f'm{i}')
   page.locator('#saveMatch').click()
   assert len(match_records())==2
+  page.locator('#configTab').click()
+  page.get_by_role('checkbox',name='Samedi',exact=True).uncheck()
   history()
   assert page.locator('#sessionCount').inner_text()=='2 matchs'
+  assert not page.locator('#weekdayAttendancePanel').is_visible()
+  assert page.get_by_role('heading',name='Présence moyenne par match').is_visible()
+  assert page.locator('#matchAverage').inner_text()=='5,5'
+  assert page.locator('#matchAverageSample').inner_text()=='Sur 2 matchs enregistrés.'
   assert chart.locator('circle').count()==2
+  assert chart.locator('polyline').count()==1
+  assert chart.locator('[data-attendance-weekday], .chart-legend, .attendance-week-divider').count()==0
+  assert all('Samedi' not in title for title in chart.locator('circle title').all_text_contents())
   assert len(set(chart.locator('circle').evaluate_all('points=>points.map(p=>p.getAttribute("cx"))')))==2
   assert '<img src=x>' in page.locator('#attendanceData').text_content()
   assert page.locator('#historyPanel img').count()==0
-  assert ranking.locator('[data-ranking-player="m0"] td[title="1 sur 2 matchs"]').count()==1
-  assert ranking.locator('[data-ranking-player="m5"] td[title="2 sur 2 matchs"]').count()==1
+  assert ranking.locator('thead th').all_text_contents()==['Rang','Joueur','Participations']
+  assert ranking.locator('[data-ranking-player="m0"] td').last.inner_text()=='1'
+  assert ranking.locator('[data-ranking-player="m5"] td').last.inner_text()=='2'
   page.locator('#teammateReference').select_option('m5')
   assert page.locator('#teammateData [data-teammate-id="m1"] td').text_content()=='2'
   assert '2 matchs' in page.locator('#relationshipGraph line').filter(has_text='Joueur 4 et Joueur 5').locator('title').text_content()
-  page.locator('#relationshipWeekday').select_option('4')
-  assert 'Aucune présence' in page.locator('#relationshipGraph').inner_text()
-  page.locator('#relationshipWeekday').select_option('all')
+  assert not relationship_day.is_visible()
   mode.select_option('training')
   assert page.locator('#sessionCount').inner_text()=='1 séance'
+  assert relationship_day.is_visible() and relationship_day.input_value()=='4'
+  assert page.locator('#weekdayAttendancePanel').is_visible() and not page.locator('#matchAttendancePanel').is_visible()
+  assert chart.locator('[data-legend-weekday="5"]').count()==0
   assert 'Les Bleus' not in page.locator('#attendanceData').text_content() and page.locator('#trainingHistory').is_visible()
   mode.select_option('match')
   page.locator('#historyMatch').select_option(saved_match['id'])
@@ -470,6 +484,7 @@ try:
   page.once('dialog',lambda dialog:dialog.accept())
   page.locator('#deleteHistoryMatch').click()
   assert page.locator('#sessionCount').inner_text()=='1 match' and records()==[replacement]
+  assert page.locator('#matchAverage').inner_text()=='5'
   assert all(match['id']!=saved_match['id'] for match in match_records())
   assert not errors,errors
   browser.close()

@@ -8,7 +8,7 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
 - **Match** permet de préparer et d’enregistrer une équipe pour un match.
 - **Statistique** donne accès aux présences, à la carte des relations et aux coéquipiers fréquents, avec un sélecteur **Entraînement / Match**.
-- **Configuration** regroupe les réglages de l’IA et le choix des jours affichés dans les statistiques. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
+- **Configuration** regroupe les réglages de l’IA et le choix des jours affichés dans les statistiques d’entraînement. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
 
 ## Postes des joueurs
 
@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.3), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.3.1), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -113,7 +113,7 @@ Les séances et les matchs sont conservés dans les clés locales `basket-sessio
 
 Dans **Match**, renseignez la date et l’équipe adverse, sélectionnez l’effectif, puis choisissez un titulaire pour chacun des cinq postes. Les autres joueurs sélectionnés apparaissent parmi les remplaçants. Cliquez sur **Enregistrer le match** pour l’ajouter à l’historique, puis sur **Nouveau match** pour en préparer un autre. Plusieurs matchs peuvent être enregistrés le même jour.
 
-Dans **Statistique**, choisissez **Match** pour afficher les présences par date, les moyennes, le classement et les cartes de coéquipiers au même format que pour les entraînements. Chaque titulaire et chaque remplaçant compte une fois par match. Les liens entre coéquipiers reposent sur leur sélection pour le même match. **Gérer les matchs** permet de retrouver la composition, de la modifier dans **Match** ou de supprimer l’enregistrement.
+Dans **Statistique**, choisissez **Match** pour afficher les présences par date, la présence moyenne par match, le classement par nombre de matchs et les cartes de coéquipiers. Ces statistiques couvrent tous les matchs enregistrés. Chaque titulaire et chaque remplaçant compte une fois par match. Les liens entre coéquipiers reposent sur leur sélection pour le même match. **Gérer les matchs** permet de retrouver la composition, de la modifier dans **Match** ou de supprimer l’enregistrement.
 
 Chaque match contient `id`, `date`, `opponent`, `players` (copies des profils), `starters` (identifiants dans l’ordre des postes 1 à 5) et `substitutes` (identifiants des remplaçants).
 

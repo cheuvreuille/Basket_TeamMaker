@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 3.3.1 — 28 novembre 2026
+
+- Les statistiques de match affichent une courbe par date, le total par joueur et la présence moyenne par match. Les filtres et les colonnes par jour de la semaine s’appliquent aux entraînements.
+
 ## 3.3 — 28 novembre 2026
 
 - Préparation et sauvegarde des matchs avec date, adversaire, cinq majeur par poste et remplaçants.

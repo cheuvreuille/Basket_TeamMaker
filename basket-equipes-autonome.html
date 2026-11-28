@@ -66,12 +66,21 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
 .player-history dd{margin:2px 0 0;font-weight:650}
 .player-history ol{margin:0;padding-left:22px;font-size:13px}
 .player-history li{padding:3px 0;overflow-wrap:anywhere}
+.match-roster{margin-top:14px}
+.match-roster .name{white-space:normal;overflow-wrap:anywhere}
+.match-fields input,.match-lineup select{width:100%}
+.match-lineup{display:grid;gap:12px}
+.match-lineup label{margin:0}
+.match-lineup select{display:block;margin-top:5px}
+.match-substitutes,.match-details{overflow-wrap:anywhere}
+.match-details ol{padding-inline-start:28px}
+#matchStatus:not(:empty){margin-top:14px}
 #editorTitle{overflow-wrap:anywhere}
 @media(max-width:480px){.main-tabs{gap:6px}.main-tabs button{padding:10px 12px}}
 #sessionSaveDialog{width:min(520px,calc(100% - 28px));border:1px solid #bfdcea;border-radius:14px;padding:22px;color:inherit}
 #sessionSaveDialog::backdrop{background:#102d4670}
 #sessionSaveDialog p{line-height:1.5}
-</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.2.3</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
+</style></head><body><div class="shell"><header><div class="brand"><div class="mark" aria-hidden="true">BTT</div><div><h1>Basket Team tracker</h1><div class="sub">Suivez les présences et composez des équipes équilibrées.<br><span class="pill version" id="appVersion">Version 3.3</span></div></div></div><div class="top-actions"><button class="outline" id="exportBtn">Exporter les données</button><button class="outline" id="importBtn">Importer un fichier JSON</button><input type="file" id="importFile" aria-label="Fichier JSON à importer" accept=".json,application/json" hidden></div></header>
 <nav id="mainTabs" class="main-tabs" role="tablist" aria-label="Sections de l’application">
  <button id="rosterTab" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Effectif</button>
  <button id="trainingTab" role="tab" aria-selected="false" aria-controls="trainingPanel" tabindex="-1">Entraînement</button>
@@ -105,13 +114,39 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
   <button class="outline" value="cancel">Annuler</button>
  </form>
 </dialog>
-<section id="matchPanel" role="tabpanel" aria-labelledby="matchTab" hidden></section>
+<section id="matchPanel" role="tabpanel" aria-labelledby="matchTab" hidden>
+ <form id="matchForm" class="grid history-grid">
+  <section class="panel">
+   <h2 id="matchFormTitle">Préparer un match</h2>
+   <div class="fields match-fields">
+    <div class="field-wide"><label for="matchDate">Date du match</label><input id="matchDate" type="date" required></div>
+    <div class="field-wide"><label for="matchOpponent">Équipe adverse</label><input id="matchOpponent" maxlength="80" required></div>
+   </div>
+   <div class="divider"></div>
+   <div class="summary"><h3>Effectif sélectionné</h3><span id="matchPlayerCount" class="pill" aria-live="polite"></span></div>
+   <div id="matchRoster" class="roster match-roster"></div>
+  </section>
+  <section class="panel">
+   <h2>Cinq majeur</h2>
+   <div id="matchStarters" class="match-lineup"></div>
+   <div class="divider"></div>
+   <h3>Remplaçants</h3>
+   <p class="muted">Les joueurs sélectionnés en dehors du cinq majeur figurent ici.</p>
+   <div id="matchSubstitutes" class="match-substitutes"></div>
+   <div class="actions">
+    <button id="saveMatch" class="primary" type="submit">Enregistrer le match</button>
+    <button id="newMatch" class="outline" type="button" hidden>Nouveau match</button>
+   </div>
+   <div id="matchStatus" class="muted" role="status"></div>
+  </section>
+ </form>
+</section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="historyTab" hidden>
  <div class="grid history-grid">
-  <section class="panel full"><div class="summary"><div><h2>Statistiques des séances</h2><p class="muted">Ces données proviennent des séances enregistrées dans « Entraînement » ou ajoutées manuellement. Chaque joueur compte une seule fois par séance dans le suivi des présences.</p></div><span class="pill" id="sessionCount">0 séance</span></div></section>
+  <section class="panel full"><div class="summary"><h2>Statistiques</h2><span class="pill" id="sessionCount">0 séance</span></div><label for="statisticsMode">Activité</label><select id="statisticsMode"><option value="training">Entraînement</option><option value="match">Match</option></select><p id="statisticsHelp" class="muted"></p></section>
   <section class="panel"><h2>Présences par date</h2><div id="attendanceChart" class="history-chart"></div><details><summary>Voir les données du graphique</summary><div id="attendanceData" class="history-table-wrap"></div></details></section>
   <section class="panel"><h2>Nombre moyen de présents par jour de la semaine</h2><div id="weekdayAttendance" class="history-table-wrap"></div></section>
-  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Choisissez « Participations » ou un jour pour trier le classement. Sélectionnez le même en-tête pour inverser l’ordre. Pour chaque jour de la semaine, le taux rapporte les présences du joueur au nombre de séances enregistrées.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
+  <section class="panel full"><h2 id="participationHeading">Classement des présences</h2><p class="muted">Choisissez « Participations » ou un jour pour trier le classement. Sélectionnez le même en-tête pour inverser l’ordre. Le taux rapporte les présences du joueur au nombre d’événements enregistrés pour le jour de la semaine.</p><div id="participationData" class="history-table-wrap ranking-wrap" role="region" aria-labelledby="participationHeading" tabindex="0"></div></section>
   <section class="panel full">
    <div class="relationship-heading">
     <h2 id="relationshipHeading">Carte des relations entre joueurs</h2>
@@ -119,8 +154,8 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
    </div>
    <p id="relationshipSummary" class="muted" role="status"></p>
    <p class="relationship-legend muted" id="relationshipLegend" hidden>
-    <span>Cercles · Séances auxquelles le joueur a participé</span>
-    <span><i class="relationship-scale" aria-hidden="true"></i> Traits · Nombre de compositions dans la même équipe</span>
+    <span id="relationshipNodeLegend"></span>
+    <span><i class="relationship-scale" aria-hidden="true"></i> <span id="relationshipLinkLegend"></span></span>
    </p>
    <div id="relationshipGraph" class="relationship-graph" role="region" aria-labelledby="relationshipHeading" tabindex="0"></div>
    <p id="relationshipHelp" class="muted" hidden>Les duos fréquents sont rapprochés et reliés par des traits plus épais et plus foncés. Plusieurs compositions d’une même séance peuvent compter. Sélectionnez un joueur pour voir ses totaux.</p>
@@ -131,7 +166,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
   </section>
   <section class="panel full">
    <h2 id="teammateHeading">Coéquipiers les plus fréquents</h2>
-   <p class="muted">Chaque duo compte une fois par séance passée dans la même équipe.</p>
+   <p id="teammateHelp" class="muted"></p>
    <div class="teammate-controls">
     <div><label for="teammateReference">Joueur de référence</label><select id="teammateReference"><option value="">Choisir un joueur</option></select></div>
     <div><label for="teammateLimit">Coéquipiers à afficher</label><select id="teammateLimit"><option value="8">Les 8 plus fréquents</option><option value="16">Les 16 plus fréquents</option><option value="all">Tous</option></select></div>
@@ -139,12 +174,12 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
    <p id="teammateSummary" class="muted" role="status"></p>
    <div id="teammateGraph" class="relationship-graph teammate-graph" role="region" aria-labelledby="teammateHeading" tabindex="0"></div>
    <p id="teammateLegend" class="relationship-legend muted" hidden>
-    <span>Cercles · Séances ensemble</span>
+    <span id="teammateNodeLegend"></span>
     <span><i class="relationship-scale" aria-hidden="true"></i> Traits · Plus courts, épais et foncés pour les coéquipiers fréquents</span>
    </p>
    <details><summary>Voir tous les coéquipiers</summary><div id="teammateData" class="history-table-wrap"></div></details>
   </section>
-  <section class="panel full">
+  <section class="panel full" id="trainingHistory">
    <h2>Gérer les séances</h2>
    <div class="history-actions">
     <div><label for="historyDay">Séance enregistrée</label><select id="historyDay"><option value="">Aucune séance</option></select></div>
@@ -152,6 +187,16 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
    </div>
    <div id="historyStatus" role="status" aria-live="polite"></div>
    <div id="sessionEditor"></div>
+  </section>
+  <section class="panel full" id="matchHistory" hidden>
+   <h2>Gérer les matchs</h2>
+   <div class="history-actions">
+    <div><label for="historyMatch">Match enregistré</label><select id="historyMatch"></select></div>
+    <button id="editHistoryMatch" class="outline" type="button" disabled>Modifier dans Match</button>
+    <button id="deleteHistoryMatch" class="danger" type="button" disabled>Supprimer le match</button>
+   </div>
+   <div id="matchHistoryStatus" class="muted" role="status"></div>
+   <div id="matchHistoryDetails" class="match-details"></div>
   </section>
  </div>
 </section>
@@ -166,7 +211,7 @@ fieldset.positions{margin:0;padding:0;border:0;min-width:0}.positions legend{fon
  </section>
  <section class="panel configuration-card"><h2>Génération avec l’IA</h2><div class="fields"><div><label for="provider">Fournisseur</label><select id="provider" style="width:100%"><option value="openai">OpenAI (ChatGPT)</option><option value="anthropic">Anthropic (Claude)</option></select></div><div><label for="model">Nom du modèle</label><input id="model" style="width:100%" value="gpt-4.1-mini"></div><div class="field-wide"><label for="apiKey">Clé API</label><input id="apiKey" type="password" placeholder="Collez votre clé API" autocomplete="off" style="width:100%"></div></div><p class="muted">Le bouton « Proposer des équipes avec l’IA » envoie au fournisseur choisi votre clé API ainsi que les noms et les profils des joueurs présents. La clé est effacée au rechargement de la page. La génération locale fonctionne sans clé.</p></section>
 </section>
-<footer>L’effectif, les séances et les jours configurés sont conservés dans ce navigateur. Exportez les données en JSON pour garder une copie.</footer></div><script>
+<footer>L’effectif, les séances, les matchs et les jours configurés sont conservés dans ce navigateur. Exportez les données en JSON pour garder une copie.</footer></div><script>
 const SKILLS=[['creation','Création et passes'],['shooting','Tir et finition'],['rebound','Rebond'],['speed','Vitesse'],['defense','Défense'],['stamina','Endurance']];const STORAGE='basket-balancer-v1';
 const POSITIONS=[[1,'Meneur'],[2,'Arrière'],[3,'Ailier'],[4,'Ailier fort'],[5,'Pivot']];
 const GENDERS={unspecified:'Non renseigné',female:'Femme',male:'Homme',other:'Autre'};
@@ -306,7 +351,7 @@ $('deletePlayerBtn').onclick=()=>{
 };
 $('allBtn').onclick=()=>setAllAttendance(true);$('noneBtn').onclick=()=>setAllAttendance(false);
 $('exportBtn').onclick=()=>{
- const backup={version:1,players,sessions:historyStore.exportSessions(),statisticsWeekdays:historyStore.exportWeekdays()};
+ const backup={version:1,players,sessions:historyStore.exportSessions(),matches:historyStore.exportMatches(),statisticsWeekdays:historyStore.exportWeekdays()};
  const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
  const link=document.createElement('a');
  link.href=url;link.download='basket-joueurs.json';link.click();URL.revokeObjectURL(url);
@@ -582,6 +627,7 @@ render();</script><script>
 // History is independent of the Team Maker and its calculation engines.
 const historyStore=(()=>{
  const KEY='basket-sessions-v2';
+ const MATCH_KEY='basket-matches-v1';
  const WEEKDAY_KEY='basket-statistics-weekdays';
  const WEEKDAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
  const ALL_WEEKDAYS=WEEKDAYS.map((_,day)=>day);
@@ -592,6 +638,8 @@ const historyStore=(()=>{
  const averageFormat=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
  const rateFormat=new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:1});
  let sessions=[],draft=null,compositionId=null,blocked=false;
+ let matches=[],matchesBlocked=false,editedMatchId=null;
+ let matchSelected=new Set(),matchStarters=POSITIONS.map(()=>'');
  let rankingColumn='count',rankingDirection='descending';
  let relationshipPlayer=null;
  const clone=value=>JSON.parse(JSON.stringify(value));
@@ -674,18 +722,45 @@ const historyStore=(()=>{
    return {id,date:s.date,savedAt:typeof s.savedAt==='string'?s.savedAt:s.date+'T12:00:00Z',players:participants,compositions};
   }).sort((a,b)=>a.date.localeCompare(b.date));
  }
+ function normalizeMatches(list){
+  if(!Array.isArray(list))throw Error('Le champ « matches » doit contenir une liste de matchs.');
+  const ids=new Set();
+  return list.map(match=>{
+   if(!match||typeof match.id!=='string'||!match.id||ids.has(match.id)||!validDate(match.date))throw Error('Date ou identifiant de match invalide.');
+   ids.add(match.id);
+   const opponent=typeof match.opponent==='string'?match.opponent.trim():'';
+   if(!opponent||opponent.length>80)throw Error('Indiquez le nom de l’équipe adverse (80 caractères maximum).');
+   if(!Array.isArray(match.players)||!Array.isArray(match.starters)||match.starters.length!==POSITIONS.length||!Array.isArray(match.substitutes))throw Error('Le match doit renseigner les cinq titulaires et la liste des remplaçants.');
+   const participants=match.players.map(snapshot),selected=new Set(participants.map(p=>p.id));
+   const assigned=[...match.starters,...match.substitutes];
+   if(selected.size!==participants.length||assigned.length!==selected.size||new Set(assigned).size!==assigned.length||assigned.some(id=>!selected.has(id))){
+    throw Error('Attribuez une seule place à chaque joueur sélectionné, dans le cinq majeur ou parmi les remplaçants.');
+   }
+   return {id:match.id,date:match.date,opponent,players:participants,starters:match.starters.slice(),substitutes:match.substitutes.slice()};
+  }).sort((a,b)=>a.date.localeCompare(b.date)||a.opponent.localeCompare(b.opponent,'fr'));
+ }
  function status(message){$('historyStatus').textContent=message}
  try{const stored=localStorage.getItem(KEY);sessions=stored?normalize(JSON.parse(stored)):[]}catch(error){blocked=true;status('Impossible de lire l’historique local. '+error.message+' Importez une sauvegarde valide avant de le modifier. Les données stockées sont conservées.')}
+ try{
+  const stored=localStorage.getItem(MATCH_KEY);
+  matches=stored?normalizeMatches(JSON.parse(stored)):[];
+ }catch{
+  matchesBlocked=true;
+  $('matchHistoryStatus').textContent='Impossible de lire les matchs enregistrés. Importez une sauvegarde des matchs pour restaurer cet historique.';
+ }
  function commit(next,message,selectedId){
   if(blocked)throw Error('Importez une sauvegarde valide pour restaurer l’historique.');
   const checked=normalize(next);localStorage.setItem(KEY,JSON.stringify(checked));sessions=checked;refresh(selectedId);status(message);
  }
  function importData(nextPlayers,backup){
   const hasSessions=Object.hasOwn(backup,'sessions'),hasWeekdays=Object.hasOwn(backup,'statisticsWeekdays');
+  const hasMatches=Object.hasOwn(backup,'matches');
   const nextSessions=hasSessions?normalize(backup.sessions):sessions;
+  const nextMatches=hasMatches?normalizeMatches(backup.matches):matches;
   const nextWeekdays=hasWeekdays?normalizeWeekdays(backup.statisticsWeekdays):displayedDays;
   const updates=[[STORAGE,JSON.stringify(nextPlayers)]];
   if(hasSessions)updates.push([KEY,JSON.stringify(nextSessions)]);
+  if(hasMatches)updates.push([MATCH_KEY,JSON.stringify(nextMatches)]);
   if(hasWeekdays)updates.push([WEEKDAY_KEY,JSON.stringify(nextWeekdays)]);
   const previous=updates.map(([key])=>localStorage.getItem(key));
   let written=0;
@@ -698,15 +773,137 @@ const historyStore=(()=>{
    }
    throw error;
   }
-  sessions=nextSessions;players=nextPlayers;displayedDays=nextWeekdays;
+  sessions=nextSessions;matches=nextMatches;players=nextPlayers;displayedDays=nextWeekdays;
   if(hasSessions)blocked=false;
+  if(hasMatches){
+   matchesBlocked=false;
+   $('matchHistoryStatus').textContent='Matchs importés.';
+   loadMatch();
+  }
   if(hasWeekdays){renderWeekdayOptions();$('weekdayStatus').hidden=true}
   draft=null;refresh();
   if(!blocked){
    const message=hasSessions?'Effectif et historique importés.':'Effectif importé. Historique existant conservé.';
-   status(message+(hasWeekdays?' Jours des statistiques restaurés.':''));
+   status(message+(hasMatches?' Matchs importés.':'')+(hasWeekdays?' Jours des statistiques restaurés.':''));
   }
  }
+ function storeMatches(next){
+  if(matchesBlocked)throw Error('Importez une sauvegarde des matchs avant de modifier l’historique.');
+  const checked=normalizeMatches(next);
+  localStorage.setItem(MATCH_KEY,JSON.stringify(checked));
+  matches=checked;
+ }
+ function matchRoster(){
+  const saved=matches.find(match=>match.id===editedMatchId);
+  const roster=new Map((saved?.players??[]).map(p=>[p.id,p]));
+  players.forEach(p=>roster.set(p.id,p));
+  return [...roster.values()].sort(comparePlayerNames);
+ }
+ function renderMatchLineup(selected){
+  const substitutes=selected.filter(p=>!matchStarters.includes(p.id));
+  $('matchPlayerCount').textContent=countLabel(selected.length,'joueur');
+  $('matchStarters').innerHTML=POSITIONS.map(([position,label],index)=>`
+   <label for="matchStarter_${position}">${position} · ${label}<select id="matchStarter_${position}" data-match-slot="${index}" required>
+    <option value="">Choisir un joueur</option>
+    ${selected.map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===matchStarters[index]?'selected':matchStarters.includes(p.id)?'disabled':''}>${escapeHtml(p.name)}</option>`).join('')}
+   </select></label>`).join('');
+  $('matchSubstitutes').textContent=substitutes.map(p=>p.name).join(', ')||'Aucun remplaçant.';
+ }
+ function renderMatchEditor(){
+  const roster=matchRoster(),ids=new Set(roster.map(p=>p.id));
+  matchSelected=new Set([...matchSelected].filter(id=>ids.has(id)));
+  matchStarters=matchStarters.map(id=>matchSelected.has(id)?id:'');
+  $('matchRoster').innerHTML=roster.length?roster.map(p=>`
+   <label class="player attendance-player">
+    <input type="checkbox" data-match-player="${escapeHtml(p.id)}" ${matchSelected.has(p.id)?'checked':''}>
+    <span class="info name">${escapeHtml(p.name)}</span>
+   </label>`).join(''):'<p class="muted">Ajoutez des joueurs dans l’onglet Effectif pour préparer un match.</p>';
+  $('matchFormTitle').textContent=editedMatchId?'Modifier le match':'Préparer un match';
+  $('newMatch').hidden=!editedMatchId;
+  renderMatchLineup(roster.filter(p=>matchSelected.has(p.id)));
+ }
+ function loadMatch(match=null){
+  editedMatchId=match?.id??null;
+  matchSelected=new Set(match?.players.map(p=>p.id));
+  matchStarters=match?.starters.slice()??POSITIONS.map(()=>'');
+  $('matchDate').value=match?.date??today();
+  $('matchOpponent').value=match?.opponent??'';
+  $('matchStatus').textContent='';
+  renderMatchEditor();
+ }
+ $('matchRoster').onchange=event=>{
+  const input=event.target,id=input.dataset.matchPlayer;
+  if(input.checked)matchSelected.add(id);
+  else{
+   matchSelected.delete(id);
+   matchStarters=matchStarters.map(starter=>starter===id?'':starter);
+  }
+  renderMatchLineup(matchRoster().filter(p=>matchSelected.has(p.id)));
+ };
+ $('matchStarters').onchange=event=>{
+  const select=event.target;
+  matchStarters[Number(select.dataset.matchSlot)]=select.value;
+  renderMatchLineup(matchRoster().filter(p=>matchSelected.has(p.id)));
+  $(select.id).focus({preventScroll:true});
+ };
+ $('newMatch').onclick=()=>{loadMatch();$('matchDate').focus()};
+ $('matchForm').oninput=()=>{$('matchStatus').textContent=''};
+ $('matchForm').onsubmit=event=>{
+  event.preventDefault();
+  try{
+   const selected=matchRoster().filter(p=>matchSelected.has(p.id));
+   const id=editedMatchId??crypto.randomUUID();
+   const match={id,date:$('matchDate').value,opponent:$('matchOpponent').value,players:selected,
+    starters:matchStarters,substitutes:selected.filter(p=>!matchStarters.includes(p.id)).map(p=>p.id)};
+   storeMatches([...matches.filter(item=>item.id!==id),match]);
+   loadMatch(matches.find(item=>item.id===id));
+   $('matchStatus').textContent='Match enregistré. Retrouvez-le dans « Statistique », en sélectionnant « Match ».';
+   $('matchHistoryStatus').textContent='';
+   if(matchStats())refreshStatistics();
+   renderMatchHistory(id);
+  }catch(error){$('matchStatus').textContent='Enregistrement impossible. '+error.message}
+ };
+ function selectedHistoryMatch(){return matches.find(match=>match.id===$('historyMatch').value)}
+ function renderMatchDetails(){
+  const match=selectedHistoryMatch();
+  $('editHistoryMatch').disabled=$('deleteHistoryMatch').disabled=!match;
+  if(!match){
+   $('matchHistoryDetails').innerHTML='<p class="history-empty">Enregistrez un match dans l’onglet « Match » pour le retrouver ici.</p>';
+   return;
+  }
+  const names=new Map(match.players.map(p=>[p.id,escapeHtml(p.name)]));
+  $('matchHistoryDetails').innerHTML=`
+   <h3>Cinq majeur</h3><ol>${match.starters.map((id,i)=>`<li>${POSITIONS[i][1]} · ${names.get(id)}</li>`).join('')}</ol>
+   <h3>Remplaçants</h3><p class="muted">${match.substitutes.map(id=>names.get(id)).join(', ')||'Aucun remplaçant.'}</p>`;
+ }
+ function renderMatchHistory(selected=$('historyMatch').value){
+  const select=$('historyMatch');
+  select.innerHTML=matches.length?matches.slice().reverse().map(match=>`<option value="${escapeHtml(match.id)}">${dateLabel(match.date)} · ${escapeHtml(match.opponent)}</option>`).join(''):'<option value="">Aucun match</option>';
+  select.disabled=!matches.length;
+  if(matches.some(match=>match.id===selected))select.value=selected;
+  renderMatchDetails();
+ }
+ $('historyMatch').onchange=()=>{$('matchHistoryStatus').textContent='';renderMatchDetails()};
+ $('editHistoryMatch').onclick=()=>{
+  const match=selectedHistoryMatch();
+  if(!match)return;
+  loadMatch(match);
+  openTab($('matchTab'));
+  $('matchDate').focus();
+ };
+ $('deleteHistoryMatch').onclick=()=>{
+  const match=selectedHistoryMatch();
+  if(!match||!confirm(`Supprimer le match du ${dateLabel(match.date)} contre ${match.opponent} ?`))return;
+  try{
+   storeMatches(matches.filter(item=>item.id!==match.id));
+   if(editedMatchId===match.id)loadMatch();
+   renderMatchHistory();
+   refreshStatistics();
+   $('matchHistoryStatus').textContent='Match supprimé.';
+   const target=matches.length?$('historyMatch'):$('statisticsMode');
+   target.focus();
+  }catch(error){$('matchHistoryStatus').textContent='Suppression impossible. '+error.message}
+ };
  function saveToday(mode,date=today()){
   try{
    if(!lastResult)throw Error('Générez une composition avant de l’enregistrer.');
@@ -748,9 +945,10 @@ const historyStore=(()=>{
    $(item.getAttribute('aria-controls')).hidden=!active;
   }
   if(tab.id==='historyTab'){
-   if(isNewSession()){renderRelationships(renderCharts());renderEditor()}
+   if(isNewSession()){refreshStatistics();renderEditor()}
    else refresh();
   }
+  if(tab.id==='matchTab')renderMatchEditor();
   if(tab.id==='rosterTab'&&editing!==null)renderPlayerHistory(editing);
  }
  tabs.forEach(tab=>tab.addEventListener('click',()=>openTab(tab)));
@@ -791,16 +989,31 @@ const historyStore=(()=>{
   for(const day of monthDays)lines+=line(day,'month');
   return lines;
  }
- function renderAttendanceChart(dates,values){
+ const matchStats=()=>$('statisticsMode').value==='match';
+ const attendanceUnit=()=>matchStats()?'match':'séance';
+ const relationshipUnit=()=>matchStats()?'match':'composition';
+ function statisticsRecords(){
+  if(!matchStats())return sessions;
+  return matches.map(match=>({...match,compositions:[{teams:[{playerIds:match.players.map(p=>p.id)}]}]}));
+ }
+ function renderAttendanceChart(records,visible){
   const container=$('attendanceChart');
-  if(!dates.length){
-   const message=!displayedDays.length?'Choisissez les jours à afficher dans l’onglet « Configuration ».':sessions.length?'Aucune séance enregistrée pour les jours sélectionnés.':'Aucune séance enregistrée. Créez une séance dans « Gérer les séances » ou enregistrez une composition dans « Entraînement ».';
+  if(!visible.length){
+   const empty=matchStats()?'Aucun match enregistré. Enregistrez un match dans l’onglet « Match ».':'Aucune séance enregistrée. Créez une séance dans « Gérer les séances » ou enregistrez une composition dans « Entraînement ».';
+   const noDay=matchStats()?'Aucun match enregistré pour les jours sélectionnés.':'Aucune séance enregistrée pour les jours sélectionnés.';
+   const message=!displayedDays.length?'Choisissez les jours à afficher dans l’onglet « Configuration ».':records.length?noDay:empty;
    container.innerHTML=`<p class="history-empty">${message}</p>`;
    return;
   }
+  const byDate=new Map();
+  for(const record of visible){
+   if(!byDate.has(record.date))byDate.set(record.date,[]);
+   byDate.get(record.date).push(record);
+  }
+  const dates=[...byDate.keys()];
   const days=dates.map(calendarDay),firstDay=days[0],lastDay=days.at(-1);
   const width=Math.max(300,Math.min(720,container.clientWidth||720)),height=280,left=48,right=20,top=22,bottom=225;
-  const max=Math.max(1,...values),plotWidth=width-left-right;
+  const max=visible.reduce((largest,record)=>Math.max(largest,record.players.length),1),plotWidth=width-left-right;
   const x=day=>firstDay===lastDay?left+plotWidth/2:left+(day-firstDay)*plotWidth/(lastDay-firstDay);
   const y=count=>bottom-count*(bottom-top)/max;
   let content='';
@@ -822,27 +1035,34 @@ const historyStore=(()=>{
    content+=dateText(days.length-1,'end');
   }
   const series=WEEKDAYS.map(()=>[]);
-  values.forEach((count,index)=>{
-   const weekday=weekdayIndex(days[index]);
-   series[weekday].push({x:x(days[index]),y:y(count),date:dates[index],count});
-  });
+  for(const [date,group] of byDate){
+   const day=calendarDay(date),weekday=weekdayIndex(day),gaps=group.length-1;
+   const spacing=gaps?Math.min(12,plotWidth*.6/(Math.max(1,lastDay-firstDay)*gaps)):0;
+   group.forEach(({players,opponent},index)=>{
+    const count=players.length;
+    series[weekday].push({x:x(day)+(index-gaps/2)*spacing,y:y(count),date,count,opponent});
+   });
+  }
   for(const weekday of displayedDays){
    const points=series[weekday];
    if(!points.length)continue;
    const color=WEEKDAY_COLORS[weekday];
    content+=`<g data-attendance-weekday="${weekday}">`;
    if(points.length>1)content+=`<polyline points="${points.map(point=>`${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2"/>`;
-   for(const point of points)content+=`<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="${color}" stroke="white" stroke-width="1"><title>${WEEKDAYS[weekday]} ${escapeHtml(dateLabel(point.date))} · ${countLabel(point.count,'présent')}</title></circle>`;
+   for(const point of points){
+    const label=[WEEKDAYS[weekday]+' '+dateLabel(point.date),point.opponent,countLabel(point.count,'présent')].filter(Boolean).join(' · ');
+    content+=`<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="${color}" stroke="white" stroke-width="1"><title>${escapeHtml(label)}</title></circle>`;
+   }
    content+='</g>';
   }
-  const description='Nombre de joueurs présents à chaque séance';
+  const description=matchStats()?'Nombre de joueurs sélectionnés pour chaque match':'Nombre de joueurs présents à chaque séance';
   const legend=displayedDays.map(day=>`<li data-legend-weekday="${day}"><span aria-hidden="true" style="background:${WEEKDAY_COLORS[day]}"></span>${WEEKDAYS[day]}</li>`).join('');
   container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${description}"><title>${description}</title>${content}</svg>
    <ul class="chart-legend" aria-label="Couleurs et repères du calendrier">${legend}<li><i class="attendance-divider-key week" aria-hidden="true"></i>Début de semaine</li><li><i class="attendance-divider-key" aria-hidden="true"></i>Début de mois</li></ul>`;
  }
- function teammatesFor(reference,participants){
+ function teammatesFor(reference,participants,records=sessions){
   const counts=new Map();
-  for(const session of sessions){
+  for(const session of records){
    const teammates=new Set();
    for(const composition of session.compositions){
     const team=composition.teams.find(team=>team.playerIds.includes(reference));
@@ -854,19 +1074,19 @@ const historyStore=(()=>{
   return [...counts].map(([id,count])=>({id,count,name:participants.get(id)?.name??'Joueur inconnu'}))
    .sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'fr')||a.id.localeCompare(b.id));
  }
- function renderTeammates(participants){
+ function renderTeammates(participants,records){
   const selected=$('teammateReference').value;
   const names=new Map([...participants.values()].map(p=>[p.id,p.name]));
   $('teammateReference').innerHTML='<option value="">Choisir un joueur</option>'+[...names].sort((a,b)=>a[1].localeCompare(b[1],'fr')).map(([id,name])=>`<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join('');
   if(names.has(selected))$('teammateReference').value=selected;
   const reference=$('teammateReference').value;
-  const teammates=reference?teammatesFor(reference,participants):[];
+  const teammates=reference?teammatesFor(reference,participants,records):[];
   const container=$('teammateGraph');
   $('teammateLegend').hidden=!teammates.length;
-  $('teammateData').innerHTML=teammates.length?`<table class="teammate-table"><thead><tr><th scope="col">Coéquipier</th><th scope="col">Séances ensemble</th></tr></thead><tbody>${teammates.map(p=>`<tr data-teammate-id="${escapeHtml(p.id)}"><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune séance partagée avec un coéquipier.</p>';
+  $('teammateData').innerHTML=teammates.length?`<table class="teammate-table"><thead><tr><th scope="col">Coéquipier</th><th scope="col">${matchStats()?'Matchs ensemble':'Séances ensemble'}</th></tr></thead><tbody>${teammates.map(p=>`<tr data-teammate-id="${escapeHtml(p.id)}"><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucun coéquipier à afficher.</p>';
   if(!reference||!teammates.length){
    $('teammateSummary').textContent='';
-   container.innerHTML='<p class="history-empty">'+(!reference?'Sélectionnez un joueur pour afficher ses coéquipiers.':'Aucun coéquipier enregistré pour ce joueur. Enregistrez les compositions des équipes pour alimenter cette vue.')+'</p>';return;
+   container.innerHTML='<p class="history-empty">'+(!reference?'Sélectionnez un joueur pour afficher ses coéquipiers.':'Aucun coéquipier enregistré pour ce joueur dans cette activité.')+'</p>';return;
   }
   const limit=$('teammateLimit').value==='all'?teammates.length:Number($('teammateLimit').value),shown=teammates.slice(0,limit);
   const name=names.get(reference);
@@ -876,26 +1096,32 @@ const historyStore=(()=>{
   const {positions}=layout,center=positions[0];
   const linkMarkup=links.map(({second,strength})=>{
    const player=shown[second-1];
-   const label=`${name} et ${player.name} · ${countLabel(player.count,'séance')} dans la même équipe`;
+   const label=`${name} et ${player.name} · ${countLabel(player.count,attendanceUnit())} dans la même équipe`;
    return relationshipLine(center,positions[second],strength,label);
   }).reverse().join('');
   const nodeMarkup=shown.map((p,i)=>{
-   const label=escapeHtml(`${p.name} · ${countLabel(p.count,'séance')} dans la même équipe`);
+   const label=escapeHtml(`${p.name} · ${countLabel(p.count,attendanceUnit())} dans la même équipe`);
    return `<g class="teammate-node" data-teammate-id="${escapeHtml(p.id)}" data-count="${p.count}" tabindex="0" role="group" aria-label="${label}"><title>${label}</title>${relationshipCircle(positions[i+1],p.count)}</g>`;
   }).join('');
   const referenceLabel=escapeHtml(`Joueur de référence · ${name}`);
   const referenceMarkup=`<g class="teammate-reference" tabindex="0" role="group" aria-label="${referenceLabel}"><title>${referenceLabel}</title>${relationshipCircle(center,'Réf.','#102d46')}</g>`;
   container.innerHTML=relationshipSvg(layout,`Coéquipiers de ${name}`,linkMarkup+referenceMarkup+nodeMarkup);
  }
- $('teammateReference').onchange=$('teammateLimit').onchange=()=>renderTeammates(summarizeAttendance().participants);
+ $('teammateReference').onchange=$('teammateLimit').onchange=()=>{
+  const records=statisticsRecords();
+  renderTeammates(summarizeAttendance(records).participants,records);
+ };
  const relationshipWeekday=$('relationshipWeekday');
  relationshipWeekday.innerHTML+=WEEKDAYS.map((name,day)=>`<option value="${day}">${name}</option>`).join('');
- relationshipWeekday.onchange=()=>renderRelationships(summarizeAttendance().participants);
+ relationshipWeekday.onchange=()=>{
+  const records=statisticsRecords();
+  renderRelationships(summarizeAttendance(records).participants,records);
+ };
 
- function countSharedCompositions(nodes,day){
+ function countSharedCompositions(nodes,day,records){
   const indices=new Map(nodes.map((node,index)=>[node.id,index]));
   const links=new Map();
-  for(const session of sessions){
+  for(const session of records){
    if(day!==null&&weekdayIndex(calendarDay(session.date))!==day)continue;
    for(const composition of session.compositions){
     for(const team of composition.teams){
@@ -1019,11 +1245,11 @@ const historyStore=(()=>{
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="min-width:${Math.ceil(width*.76)}px" role="group" aria-label="${escapeHtml(label)}">${markup}</svg>`;
  }
 
- function renderRelationships(participants){
+ function renderRelationships(participants,records){
   const day=relationshipWeekday.value==='all'?null:Number(relationshipWeekday.value);
   const nodes=[...participants.values()].map(p=>({id:p.id,name:p.name,count:day===null?p.count:p.byDay[day]}))
    .filter(p=>p.count>0).sort(comparePlayerNames);
-  const links=countSharedCompositions(nodes,day);
+  const links=countSharedCompositions(nodes,day,records);
   const container=$('relationshipGraph');
   const selection=$('relationshipSelection'),partners=$('relationshipPartners');
   $('relationshipLegend').hidden=!nodes.length;
@@ -1044,14 +1270,14 @@ const historyStore=(()=>{
   for(const link of links)link.strength=relationshipStrength(link.count,maxLink);
   const layout=layoutRelationships(nodes,links),{positions}=layout;
   const linkMarkup=links.map(({first,second,count,strength})=>{
-   const label=`${nodes[first].name} et ${nodes[second].name} · ${countLabel(count,'composition')} dans la même équipe`;
+   const label=`${nodes[first].name} et ${nodes[second].name} · ${countLabel(count,relationshipUnit())} dans la même équipe`;
    return relationshipLine(positions[first],positions[second],strength,label);
   }).join('');
   const nodeMarkup=nodes.map((p,i)=>{
-   const label=escapeHtml(`${p.name} · ${countLabel(p.count,'séance')}`);
+   const label=escapeHtml(`${p.name} · ${countLabel(p.count,attendanceUnit())}`);
    return `<g class="relationship-node" tabindex="0" role="button" aria-label="${label}"><title>${label}</title>${relationshipCircle(positions[i],p.count)}</g>`;
   }).join('');
-  container.innerHTML=relationshipSvg(layout,'Présences et compositions partagées',linkMarkup+nodeMarkup);
+  container.innerHTML=relationshipSvg(layout,matchStats()?'Présences et matchs partagés':'Présences et compositions partagées',linkMarkup+nodeMarkup);
   const circles=container.querySelectorAll('.relationship-node'),lines=container.querySelectorAll('.relationship-link');
   function showPlayer(index){
    relationshipPlayer=nodes[index]?.id??null;
@@ -1070,10 +1296,11 @@ const historyStore=(()=>{
     circle.setAttribute('aria-pressed',String(index===i));
     circle.classList.toggle('is-muted',index!==-1&&index!==i&&!related.has(i));
    });
-   selection.textContent=index===-1?'':nodes[index].name+' · '+(details.length?'Compositions en commun':'Aucun coéquipier pour les jours sélectionnés');
+   const sharedLabel=matchStats()?'Matchs en commun':'Compositions en commun';
+   selection.textContent=index===-1?'':nodes[index].name+' · '+(details.length?sharedLabel:'Aucun coéquipier pour les jours sélectionnés');
    partners.hidden=!details.length;
    partners.innerHTML=details.sort((a,b)=>b.count-a.count||comparePlayerNames(a,b))
-    .map(({name,count})=>`<li>${escapeHtml(name)} · ${count} composition${count===1?'':'s'}</li>`).join('');
+    .map(({name,count})=>`<li>${escapeHtml(name)} · ${countLabel(count,relationshipUnit())}</li>`).join('');
   }
   circles.forEach((circle,i)=>{
    const toggle=()=>showPlayer(relationshipPlayer===nodes[i].id?-1:i);
@@ -1088,7 +1315,7 @@ const historyStore=(()=>{
  }
 
  function renderAttendanceTables(participants,totals){
-  $('weekdayAttendance').innerHTML=displayedDays.length?`<table><thead><tr><th scope="col">Jour</th><th scope="col">Séances</th><th scope="col">Nombre moyen de présents</th></tr></thead><tbody>${displayedDays.map(day=>{
+  $('weekdayAttendance').innerHTML=displayedDays.length?`<table><thead><tr><th scope="col">Jour</th><th scope="col">${matchStats()?'Matchs':'Séances'}</th><th scope="col">Nombre moyen de présents</th></tr></thead><tbody>${displayedDays.map(day=>{
    const {sessions,players}=totals[day];
    return `<tr><th scope="row">${WEEKDAYS[day]}</th><td>${sessions}</td><td>${sessions?averageFormat.format(players/sessions):'—'}</td></tr>`;
   }).join('')}</tbody></table>`:'<p class="muted">Choisissez les jours à afficher dans l’onglet « Configuration ».</p>';
@@ -1097,6 +1324,8 @@ const historyStore=(()=>{
 
  function renderParticipationRanking(participants,totals){
   const tableContainer=$('participationData');
+  const unitLabel=attendanceUnit();
+  const noDay=matchStats()?'Aucun match enregistré ce jour':'Aucune séance enregistrée ce jour';
   const activeDay=Number(rankingColumn);
   if(rankingColumn!=='count'&&(!displayedDays.includes(activeDay)||!totals[activeDay].sessions)){
    rankingColumn='count';rankingDirection='descending';
@@ -1108,7 +1337,7 @@ const historyStore=(()=>{
   const header=(column,label,enabled=true)=>{
    const active=rankingColumn===String(column);
    const sort=active?` aria-sort="${rankingDirection}"`:'';
-   return `<th scope="col"${sort}><button type="button" class="ranking-sort" data-ranking-sort="${column}"${enabled?'':' disabled title="Aucune séance enregistrée ce jour"'}>${label}<span aria-hidden="true"></span></button></th>`;
+   return `<th scope="col"${sort}><button type="button" class="ranking-sort" data-ranking-sort="${column}"${enabled?'':` disabled title="${noDay}"`}>${label}<span aria-hidden="true"></span></button></th>`;
   };
   const dayHeaders=displayedDays.map(day=>header(day,`${WEEKDAYS[day]} (%)`,totals[day].sessions>0)).join('');
   const rows=ranking.map((p,i)=>{
@@ -1116,11 +1345,11 @@ const historyStore=(()=>{
     const total=totals[day].sessions;
     if(!total)return '<td>—</td>';
     const present=p.byDay[day];
-    return `<td title="${present} sur ${total} séances">${rateFormat.format(present/total)}</td>`;
+    return `<td title="${present} sur ${countLabel(total,unitLabel)}">${rateFormat.format(present/total)}</td>`;
    }).join('');
    return `<tr data-ranking-player="${escapeHtml(p.id)}"><td>${i+1}</td><th scope="row">${escapeHtml(p.name)}</th><td>${p.count}</td>${rates}</tr>`;
   });
-  tableContainer.innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th>${header('count','Participations')}${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Importez un effectif ou enregistrez une séance.</p>';
+  tableContainer.innerHTML=rows.length?`<table><caption>Participations par joueur</caption><thead><tr><th scope="col">Rang</th><th scope="col">Joueur</th>${header('count','Participations')}${dayHeaders}</tr></thead><tbody>${rows.join('')}</tbody></table>`:'<p class="history-empty">Aucun joueur à afficher. Ajoutez des joueurs dans l’onglet « Effectif ».</p>';
   tableContainer.querySelectorAll('[data-ranking-sort]').forEach(button=>button.addEventListener('click',()=>{
    const column=button.dataset.rankingSort;
    const scrollLeft=tableContainer.scrollLeft;
@@ -1132,7 +1361,7 @@ const historyStore=(()=>{
    tableContainer.querySelector(`[data-ranking-sort="${column}"]`).focus({preventScroll:true});
   }));
  }
- function summarizeAttendance(){
+ function summarizeAttendance(records=sessions){
   const participants=new Map();
   const totals=WEEKDAYS.map(()=>({sessions:0,players:0}));
   function participant(p){
@@ -1141,7 +1370,7 @@ const historyStore=(()=>{
    entry.name=p.name;
    return entry;
   }
-  for(const session of sessions){
+  for(const session of records){
    const day=weekdayIndex(calendarDay(session.date));
    totals[day].sessions++;
    totals[day].players+=session.players.length;
@@ -1176,24 +1405,45 @@ const historyStore=(()=>{
    ${teammates?`<ol>${teammates}</ol>`:'<p class="muted">Aucune séance partagée avec un coéquipier.</p>'}`;
   container.hidden=false;
  }
- function renderAttendancePlot(){
-  const visibleSessions=sessions.filter(session=>displayedDays.includes(weekdayIndex(calendarDay(session.date))));
-  const dates=visibleSessions.map(s=>s.date),counts=visibleSessions.map(s=>s.players.length);
-  renderAttendanceChart(dates,counts);
-  return {dates,counts};
+ function renderAttendancePlot(records=statisticsRecords()){
+  const visible=records.filter(record=>displayedDays.includes(weekdayIndex(calendarDay(record.date))));
+  renderAttendanceChart(records,visible);
+  return visible;
  }
- function renderCharts(){
-  const {dates,counts}=renderAttendancePlot();
-  $('attendanceData').innerHTML=dates.length?`<table><thead><tr><th scope="col">Date</th><th scope="col">Nombre de présents</th></tr></thead><tbody>${dates.map((date,i)=>`<tr><td>${dateLabel(date)}</td><td>${counts[i]}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune séance à afficher.</p>';
-  const {participants,totals}=summarizeAttendance();
+ function renderCharts(records=statisticsRecords()){
+  const visible=renderAttendancePlot(records),matchMode=matchStats();
+  const opponentHeader=matchMode?'<th scope="col">Adversaire</th>':'';
+  $('attendanceData').innerHTML=visible.length?`<table><thead><tr><th scope="col">Date</th>${opponentHeader}<th scope="col">Nombre de présents</th></tr></thead><tbody>${visible.map(record=>{
+   const opponentCell=matchMode?`<td>${escapeHtml(record.opponent)}</td>`:'';
+   return `<tr><td>${dateLabel(record.date)}</td>${opponentCell}<td>${record.players.length}</td></tr>`;
+  }).join('')}</tbody></table>`:`<p class="muted">${matchMode?'Aucun match à afficher.':'Aucune séance à afficher.'}</p>`;
+  const {participants,totals}=summarizeAttendance(records);
   renderAttendanceTables(participants,totals);
-  renderTeammates(participants);
-  $('sessionCount').textContent=countLabel(sessions.length,'séance');
+  renderTeammates(participants,records);
+  $('sessionCount').textContent=countLabel(records.length,attendanceUnit());
   return participants;
  }
+ function refreshStatistics(){
+  const matchMode=matchStats(),records=statisticsRecords();
+  $('trainingHistory').hidden=matchMode;
+  $('matchHistory').hidden=!matchMode;
+  $('statisticsHelp').textContent=matchMode
+   ?'Les titulaires et les remplaçants comptent chacun une fois par match enregistré.'
+   :'Ces données proviennent des entraînements enregistrés ou saisis manuellement. Chaque joueur compte une fois par séance.';
+  $('relationshipNodeLegend').textContent=matchMode?'Cercles · Matchs où le joueur était sélectionné':'Cercles · Séances auxquelles le joueur a participé';
+  $('relationshipLinkLegend').textContent=matchMode?'Traits · Matchs en commun':'Traits · Nombre de compositions dans la même équipe';
+  $('relationshipHelp').textContent=matchMode
+   ?'Les duos souvent sélectionnés ensemble sont rapprochés et reliés par des traits plus épais et plus foncés. Sélectionnez un joueur pour voir ses totaux.'
+   :'Les duos fréquents sont rapprochés et reliés par des traits plus épais et plus foncés. Plusieurs compositions d’une même séance peuvent compter. Sélectionnez un joueur pour voir ses totaux.';
+  $('teammateHelp').textContent=matchMode?'Chaque duo compte une fois par match où les deux joueurs étaient sélectionnés.':'Chaque duo compte une fois par séance passée dans la même équipe.';
+  $('teammateNodeLegend').textContent=matchMode?'Cercles · Matchs ensemble':'Cercles · Séances ensemble';
+  renderRelationships(renderCharts(records),records);
+ }
+ $('statisticsMode').onchange=refreshStatistics;
  window.addEventListener('resize',()=>{if(!$('historyPanel').hidden)renderAttendancePlot()});
  function refresh(selected=$('historyDay').value){
-  renderRelationships(renderCharts());
+  refreshStatistics();
+  renderMatchHistory();
   $('historyDay').innerHTML=sessions.length?sessions.slice().reverse().map(s=>`<option value="${escapeHtml(s.id)}">${dateLabel(s.date)} · ${countLabel(s.players.length,'présent')} · ${countLabel(s.compositions.length,'composition')}</option>`).join(''):'<option value="">Aucune séance</option>';
   if(sessions.some(s=>s.id===selected))$('historyDay').value=selected;
   selectDay();
@@ -1285,8 +1535,9 @@ const historyStore=(()=>{
    $('deleteSession').onclick=()=>{if(confirm('Supprimer définitivement la séance du '+dateLabel(draft.date)+' ?')){try{commit(sessions.filter(s=>s.id!==draft.id),'Séance supprimée.')}catch(error){status('Suppression impossible. '+error.message)}}};
   }
  }
+ loadMatch();
  refresh();
- return Object.freeze({exportSessions:()=>clone(sessions),exportWeekdays:()=>displayedDays.slice(),importData,renderPlayerHistory});
+ return Object.freeze({exportSessions:()=>clone(sessions),exportMatches:()=>clone(matches),exportWeekdays:()=>displayedDays.slice(),importData,renderPlayerHistory});
 })();
 
 </script></body></html>

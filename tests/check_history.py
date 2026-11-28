@@ -34,7 +34,7 @@ try:
    return json.loads(Path(event.value.path()).read_text())
   def history():page.locator('#historyTab').click()
   def training():page.locator('#trainingTab').click()
-  assert page.locator('#appVersion').inner_text()=='Version 3.2.3'
+  assert page.locator('#appVersion').inner_text()=='Version 3.3'
   assert page.get_by_role('tab').all_text_contents()==['Effectif','Entraînement','Match','Statistique','Configuration']
   assert page.locator('#rosterTab').get_attribute('aria-selected')=='true'
   assert page.locator('#saveSessionBtn').is_disabled()
@@ -46,7 +46,7 @@ try:
   assert 'Aucune séance' in page.locator('#attendanceChart').inner_text()
   page.locator('#historyTab').press('ArrowLeft')
   assert page.locator('#matchTab').get_attribute('aria-selected')=='true'
-  assert page.locator('#matchPanel').inner_html()==''
+  assert page.locator('#matchForm').is_visible()
   page.locator('#matchTab').press('End')
   assert page.locator('#configTab').get_attribute('aria-selected')=='true'
   page.locator('#configTab').press('ArrowRight')
@@ -390,7 +390,88 @@ try:
    assert ranking.evaluate('table=>table.scrollLeft>0')
    assert abs(name_cell.bounding_box()['x']-ranking.bounding_box()['x'])<2
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+  # Match selection and attendance are independent of the training roster and statistics.
+  def match_tab():page.locator('#matchTab').click()
+  def match_records():return page.evaluate('JSON.parse(localStorage.getItem("basket-matches-v1")||"[]")')
+  mode=page.locator('#statisticsMode')
+  mode.select_option('match')
+  assert 'Aucun match' in chart.inner_text() and not page.locator('#trainingHistory').is_visible()
+  original_roster=page.evaluate('JSON.stringify(players)')
+  match_tab()
+  assert page.locator('#matchRoster input:checked').count()==0
+  page.locator('#matchDate').fill('2026-11-28')
+  page.locator('#matchOpponent').fill('Les Bleus <img src=x>')
+  for i in range(6):page.locator(f'[data-match-player="m{i}"]').check()
+  for i in range(5):page.locator(f'#matchStarter_{i+1}').select_option(f'm{i}')
+  assert page.locator('#matchStarter_2 option[value="m0"]').evaluate('option=>option.disabled')
+  page.locator('[data-match-player="m0"]').uncheck()
+  assert page.locator('#matchStarter_1').input_value()=='' and not page.locator('#matchForm').evaluate('form=>form.checkValidity()')
+  page.locator('[data-match-player="m0"]').check()
+  page.locator('#matchStarter_1').select_option('m0')
+  assert page.locator('#matchSubstitutes').inner_text()=='Joueur 5'
+  page.locator('#saveMatch').click()
+  saved_match=match_records()[0]
+  assert saved_match['starters']==['m0','m1','m2','m3','m4'] and saved_match['substitutes']==['m5']
+  assert page.evaluate('JSON.stringify(players)')==original_roster and records()==[replacement]
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+  page.locator('#newMatch').click()
+  page.locator('#matchDate').fill('2026-11-28')
+  page.locator('#matchOpponent').fill('Les Rouges')
+  for i in range(1,6):
+   page.locator(f'[data-match-player="m{i}"]').check()
+   page.locator(f'#matchStarter_{i}').select_option(f'm{i}')
+  page.locator('#saveMatch').click()
+  assert len(match_records())==2
+  history()
+  assert page.locator('#sessionCount').inner_text()=='2 matchs'
+  assert chart.locator('circle').count()==2
+  assert len(set(chart.locator('circle').evaluate_all('points=>points.map(p=>p.getAttribute("cx"))')))==2
+  assert '<img src=x>' in page.locator('#attendanceData').text_content()
+  assert page.locator('#historyPanel img').count()==0
+  assert ranking.locator('[data-ranking-player="m0"] td[title="1 sur 2 matchs"]').count()==1
+  assert ranking.locator('[data-ranking-player="m5"] td[title="2 sur 2 matchs"]').count()==1
+  page.locator('#teammateReference').select_option('m5')
+  assert page.locator('#teammateData [data-teammate-id="m1"] td').text_content()=='2'
+  assert '2 matchs' in page.locator('#relationshipGraph line').filter(has_text='Joueur 4 et Joueur 5').locator('title').text_content()
+  page.locator('#relationshipWeekday').select_option('4')
+  assert 'Aucune présence' in page.locator('#relationshipGraph').inner_text()
+  page.locator('#relationshipWeekday').select_option('all')
+  mode.select_option('training')
+  assert page.locator('#sessionCount').inner_text()=='1 séance'
+  assert 'Les Bleus' not in page.locator('#attendanceData').text_content() and page.locator('#trainingHistory').is_visible()
+  mode.select_option('match')
+  page.locator('#historyMatch').select_option(saved_match['id'])
+  assert page.locator('#matchHistoryDetails li').count()==5
+  assert 'Joueur 5' in page.locator('#matchHistoryDetails').inner_text()
+  page.locator('#editHistoryMatch').click()
+  assert page.locator('#matchOpponent').input_value()==saved_match['opponent']
+  assert page.locator('#matchStarter_1').input_value()=='m0'
+  page.locator('#matchOpponent').fill('Les Bleus')
+  page.locator('#saveMatch').click()
+  assert len(match_records())==2 and match_records()[0]['id']==saved_match['id']
+  # JSON round trip, old imports and invalid match imports.
+  match_backup=export()
+  assert match_backup['sessions']==[replacement] and match_backup['matches']==match_records()
+  upload(match_backup['players'])
+  assert match_records()==match_backup['matches']
+  invalid_match=json.loads(json.dumps(match_backup['matches'][0]))
+  invalid_match['starters'][1]=invalid_match['starters'][0]
+  page.once('dialog',lambda dialog:dialog.dismiss())
+  upload(dict(players=[],sessions=[],matches=[invalid_match]))
+  assert page.evaluate('JSON.stringify(players)')==original_roster and match_records()==match_backup['matches'] and records()==[replacement]
+  upload(dict(match_backup,matches=[]))
+  assert match_records()==[] and records()==[replacement]
+  upload(match_backup)
+  page.reload()
+  history()
+  mode.select_option('match')
+  assert page.locator('#sessionCount').inner_text()=='2 matchs'
+  page.locator('#historyMatch').select_option(saved_match['id'])
+  page.once('dialog',lambda dialog:dialog.accept())
+  page.locator('#deleteHistoryMatch').click()
+  assert page.locator('#sessionCount').inner_text()=='1 match' and records()==[replacement]
+  assert all(match['id']!=saved_match['id'] for match in match_records())
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
-print('PASS: five-tab navigation, attendance selection, daily save/local date, duplicate/stale safeguards, attendance curve, descending player ranking, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')
+print('PASS: training and match workflows, independent statistics, match lineups, same-day records, history editing/deletion, persistence, legacy/new JSON, atomic invalid-import rejection, escaped text, responsive.')

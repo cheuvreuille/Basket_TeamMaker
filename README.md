@@ -4,10 +4,10 @@ Application autonome : ouvrir `basket-equipes-autonome.html`, ou servir le dossi
 
 ## Onglets de l’application
 
-- **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique. La fiche affiche le total des participations, le nombre et le taux de présence pour chaque jour sélectionné dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers fréquents. Le total inclut tous les jours de la semaine.
+- **Effectif** permet d’ouvrir une fiche en cliquant sur le cadre du joueur, de modifier ses informations et de consulter son historique d’entraînement. La fiche affiche le total des participations, le nombre et le taux de présence pour chaque jour sélectionné dans **Configuration**, la dernière participation et jusqu’à cinq coéquipiers fréquents. Le total inclut tous les jours de la semaine.
 - **Entraînement** regroupe la sélection des présents, les moteurs de génération et la composition des équipes.
-- **Match** est réservé à une future évolution.
-- **Statistique** donne accès au suivi des séances, aux présences, à la carte des relations et aux coéquipiers fréquents.
+- **Match** permet de préparer et d’enregistrer une équipe pour un match.
+- **Statistique** donne accès aux présences, à la carte des relations et aux coéquipiers fréquents, avec un sélecteur **Entraînement / Match**.
 - **Configuration** regroupe les réglages de l’IA et le choix des jours affichés dans les statistiques. Le bouton pour générer les équipes avec l’IA se trouve dans **Entraînement**.
 
 ## Postes des joueurs
@@ -53,7 +53,7 @@ Les tests utilisent `/usr/bin/chromium`. Ils vérifient la migration des formats
 
 ## Suivi des versions
 
-La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.2.3), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
+La version de l’application est affichée en haut du site (`appVersion` dans `basket-equipes-autonome.html`). Pour chaque nouvelle version, mettre à jour ce libellé et ajouter une entrée dans [CHANGELOG.md](CHANGELOG.md). La version de l’application (3.3), les versions des moteurs (1.0, 2.0 et 3.0) et la version du format JSON (1) sont indépendantes.
 
 ## Couleurs des équipes (1.5.2)
 
@@ -86,13 +86,14 @@ Les corrections portent sur l’historique des séances. L’effectif, la sélec
 
 ### Sauvegarde et compatibilité
 
-L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et la version JSON `1`. Il contient les séances et les jours sélectionnés.
+L’export conserve le fichier `basket-joueurs.json`, le format des joueurs et la version JSON `1`. Il contient les séances, les matchs et les jours sélectionnés.
 
 ```json
 {
   "version": 1,
   "players": [],
   "sessions": [],
+  "matches": [],
   "statisticsWeekdays": [0, 2, 4]
 }
 ```
@@ -101,11 +102,20 @@ Chaque séance comporte `id`, `date` (`YYYY-MM-DD`), `savedAt`, `players` (copie
 
 - Les anciens tableaux de joueurs et les objets JSON sans `sessions` remplacent toujours l’effectif et **conservent l’historique local existant**.
 - Un objet avec `sessions` remplace l’effectif et l’historique après validation. `"sessions": []` vide explicitement l’historique.
+- Un fichier sans `matches` conserve les matchs locaux. Un fichier avec `matches` remplace les matchs après validation. `"matches": []` vide l’historique des matchs.
 - `statisticsWeekdays` contient les jours sélectionnés, de `0` pour lundi à `6` pour dimanche. Une liste vide masque tous les jours. Un fichier sans ce champ conserve le réglage actuel.
-- Un historique ou une sélection de jours invalide bloque l’import entier.
+- Un historique de séances ou de matchs invalide, ou une sélection de jours invalide, bloque l’import entier.
 - La version 3.1 relit les anciens fichiers et convertit les équipes de chaque séance en une composition. Pour restaurer un export contenant des compositions multiples, utilisez la version 3.1 ou une version ultérieure.
 
-Les séances persistent dans la clé locale `basket-sessions-v2`, séparée de la clé existante des joueurs. Aucun serveur, compte ni service externe n’est nécessaire. Exportez régulièrement le JSON pour conserver une sauvegarde des deux ensembles de données.
+Les séances et les matchs sont conservés dans les clés locales `basket-sessions-v2` et `basket-matches-v1`. Exportez régulièrement le JSON pour sauvegarder les données du navigateur.
+
+## Matchs
+
+Dans **Match**, renseignez la date et l’équipe adverse, sélectionnez l’effectif, puis choisissez un titulaire pour chacun des cinq postes. Les autres joueurs sélectionnés apparaissent parmi les remplaçants. Cliquez sur **Enregistrer le match** pour l’ajouter à l’historique, puis sur **Nouveau match** pour en préparer un autre. Plusieurs matchs peuvent être enregistrés le même jour.
+
+Dans **Statistique**, choisissez **Match** pour afficher les présences par date, les moyennes, le classement et les cartes de coéquipiers au même format que pour les entraînements. Chaque titulaire et chaque remplaçant compte une fois par match. Les liens entre coéquipiers reposent sur leur sélection pour le même match. **Gérer les matchs** permet de retrouver la composition, de la modifier dans **Match** ou de supprimer l’enregistrement.
+
+Chaque match contient `id`, `date`, `opponent`, `players` (copies des profils), `starters` (identifiants dans l’ordre des postes 1 à 5) et `substitutes` (identifiants des remplaçants).
 
 ## Coéquipiers les plus fréquents
 

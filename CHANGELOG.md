@@ -1,5 +1,11 @@
 # Historique des versions
 
+## 3.3 — 28 novembre 2026
+
+- Préparation et sauvegarde des matchs avec date, adversaire, cinq majeur par poste et remplaçants.
+- Sélecteur **Entraînement / Match** dans les statistiques, avec les mêmes graphiques et classements pour chaque activité.
+- Consultation, modification et suppression des matchs enregistrés. Les matchs sont inclus dans les sauvegardes JSON.
+
 ## 3.2.3 — 27 novembre 2026
 
 - Sur mobile, les noms des joueurs reviennent à la ligne et restent visibles pendant le défilement horizontal du classement des présences.
